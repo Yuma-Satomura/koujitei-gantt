@@ -4,13 +4,54 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+type Step = 'email' | 'login' | 'setup'
+
+interface PendingUser {
+  name: string
+  role: string
+  color: string
+}
+
 export default function LoginPage() {
+  const router = useRouter()
+  const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [pending, setPending] = useState<PendingUser | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
+  // Step 1: メールアドレス確認
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    const supabase = createClient()
+
+    // pending テーブルにあるか確認（初回登録ユーザー）
+    const { data: pendingUser } = await supabase
+      .from('koujitei_pending_users')
+      .select('name, role, color')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (pendingUser) {
+      // 招待済み・未登録 → パスワード設定画面へ
+      setPending(pendingUser)
+      setStep('setup')
+      setLoading(false)
+      return
+    }
+
+    // pending にない → 既存ユーザーとしてログイン画面へ
+    // koujitei_users に存在するかは signIn で確認
+    setStep('login')
+    setLoading(false)
+  }
+
+  // Step 2a: 既存ユーザーのログイン
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -37,6 +78,59 @@ export default function LoginPage() {
     router.refresh()
   }
 
+  // Step 2b: 初回登録（パスワード設定 + ユーザー作成）
+  async function handleSetup(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+
+    if (password !== passwordConfirm) {
+      setError('パスワードが一致しません')
+      return
+    }
+    if (password.length < 6) {
+      setError('パスワードは6文字以上で設定してください')
+      return
+    }
+
+    setLoading(true)
+    const supabase = createClient()
+
+    // Auth アカウント作成
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+    if (signUpError || !data.user) {
+      setError(signUpError?.message ?? 'アカウント作成に失敗しました')
+      setLoading(false)
+      return
+    }
+
+    // koujitei_users にプロフィールを保存
+    const { error: insertError } = await supabase.from('koujitei_users').insert({
+      id: data.user.id,
+      name: pending!.name,
+      role: pending!.role,
+      color: pending!.color,
+    })
+    if (insertError) {
+      setError('プロフィールの保存に失敗しました: ' + insertError.message)
+      setLoading(false)
+      return
+    }
+
+    // pending テーブルから削除
+    await supabase.from('koujitei_pending_users').delete().eq('email', email)
+
+    router.push(pending!.role === 'admin' ? '/admin' : '/member')
+    router.refresh()
+  }
+
+  function goBack() {
+    setStep('email')
+    setPassword('')
+    setPasswordConfirm('')
+    setError(null)
+    setPending(null)
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#0f0f0f' }}>
       <div className="w-full max-w-sm">
@@ -45,11 +139,14 @@ export default function LoginPage() {
             KOUJITEI SYSTEM
           </div>
           <h1 className="text-2xl font-bold" style={{ color: '#e8e6e0' }}>工事部 工程表</h1>
-          <p className="text-sm mt-1" style={{ color: '#888' }}>ログイン</p>
+          <p className="text-sm mt-1" style={{ color: '#888' }}>
+            {step === 'email' && 'メールアドレスを入力してください'}
+            {step === 'login' && 'パスワードを入力してください'}
+            {step === 'setup' && `${pending?.name} さん、パスワードを設定してください`}
+          </p>
         </div>
 
-        <form
-          onSubmit={handleLogin}
+        <div
           className="rounded-xl p-6 space-y-4"
           style={{ background: '#161616', border: '1px solid #2a2a2a' }}
         >
@@ -59,53 +156,158 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#888' }}>
-              メールアドレス
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
-              style={{
-                background: '#1e1e1e',
-                border: '1px solid #333',
-                color: '#e8e6e0',
-              }}
-              placeholder="example@company.com"
-            />
-          </div>
+          {/* Step 1: メールアドレス */}
+          {step === 'email' && (
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: '#888' }}>
+                  メールアドレス
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  autoFocus
+                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                  style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+                  placeholder="example@company.com"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg py-2.5 text-sm font-bold disabled:opacity-50"
+                style={{ background: '#4a7fff', color: '#fff' }}
+              >
+                {loading ? '確認中...' : '次へ'}
+              </button>
+            </form>
+          )}
 
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#888' }}>
-              パスワード
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
-              style={{
-                background: '#1e1e1e',
-                border: '1px solid #333',
-                color: '#e8e6e0',
-              }}
-              placeholder="••••••••"
-            />
-          </div>
+          {/* Step 2a: ログイン */}
+          {step === 'login' && (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div
+                className="rounded-lg px-3 py-2 text-sm flex items-center gap-2"
+                style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
+              >
+                <span style={{ color: '#555' }}>✉</span>
+                <span style={{ color: '#888' }}>{email}</span>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: '#888' }}>
+                  パスワード
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  autoFocus
+                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                  style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+                  placeholder="••••••••"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg py-2.5 text-sm font-bold disabled:opacity-50"
+                style={{ background: '#4a7fff', color: '#fff' }}
+              >
+                {loading ? 'ログイン中...' : 'ログイン'}
+              </button>
+              <button
+                type="button"
+                onClick={goBack}
+                className="w-full text-xs py-1"
+                style={{ color: '#555' }}
+              >
+                ← メールアドレスに戻る
+              </button>
+            </form>
+          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg py-2.5 text-sm font-bold transition-opacity disabled:opacity-50"
-            style={{ background: '#4a7fff', color: '#fff' }}
-          >
-            {loading ? 'ログイン中...' : 'ログイン'}
-          </button>
-        </form>
+          {/* Step 2b: 初回パスワード設定 */}
+          {step === 'setup' && (
+            <form onSubmit={handleSetup} className="space-y-4">
+              <div
+                className="rounded-lg px-3 py-2.5 text-sm"
+                style={{ background: 'rgba(74,127,255,.08)', border: '1px solid rgba(74,127,255,.2)' }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: 8, height: 8,
+                      borderRadius: '50%',
+                      background: pending?.color,
+                    }}
+                  />
+                  <span className="font-bold text-xs" style={{ color: '#e8e6e0' }}>{pending?.name}</span>
+                  <span
+                    className="text-xs px-1.5 py-0.5 rounded ml-auto"
+                    style={{
+                      background: pending?.role === 'admin' ? 'rgba(46,204,113,.15)' : 'rgba(74,127,255,.15)',
+                      color: pending?.role === 'admin' ? '#2ecc71' : '#4a7fff',
+                    }}
+                  >
+                    {pending?.role}
+                  </span>
+                </div>
+                <div className="text-xs" style={{ color: '#888' }}>{email}</div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: '#888' }}>
+                  パスワード（6文字以上）
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoFocus
+                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                  style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+                  placeholder="••••••••"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: '#888' }}>
+                  パスワード（確認）
+                </label>
+                <input
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={e => setPasswordConfirm(e.target.value)}
+                  required
+                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                  style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+                  placeholder="••••••••"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg py-2.5 text-sm font-bold disabled:opacity-50"
+                style={{ background: '#4a7fff', color: '#fff' }}
+              >
+                {loading ? '登録中...' : '登録してログイン'}
+              </button>
+              <button
+                type="button"
+                onClick={goBack}
+                className="w-full text-xs py-1"
+                style={{ color: '#555' }}
+              >
+                ← メールアドレスに戻る
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )

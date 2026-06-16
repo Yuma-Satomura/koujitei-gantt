@@ -11,55 +11,63 @@ const COLORS = [
   '#ff5722','#8bc34a','#ff9800','#673ab7','#607d8b',
 ]
 
-interface Props { users: KoujiteiUser[] }
+interface PendingUser {
+  id: string
+  email: string
+  name: string
+  role: Role
+  color: string
+  created_at: string
+}
+
+interface Props {
+  users: KoujiteiUser[]
+  pendingUsers: PendingUser[]
+}
 
 interface InviteForm {
   email: string
-  password: string
   name: string
   role: Role
   color: string
 }
 
-export default function UsersClient({ users }: Props) {
+export default function UsersClient({ users, pendingUsers }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const refresh = useCallback(() => router.refresh(), [router])
 
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState<InviteForm>({
-    email: '', password: '', name: '', role: 'member', color: COLORS[0],
+    email: '', name: '', role: 'member', color: COLORS[0],
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleAdd(e: React.FormEvent) {
+  async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    // Supabase Auth にユーザー作成 (Admin API が必要なため、signUp を使用)
-    const { data, error: authErr } = await supabase.auth.signUp({
+    const { error: dbErr } = await supabase.from('koujitei_pending_users').insert({
       email: form.email,
-      password: form.password,
-    })
-    if (authErr || !data.user) {
-      setError(authErr?.message ?? 'ユーザー作成に失敗しました')
-      setLoading(false)
-      return
-    }
-
-    const { error: dbErr } = await supabase.from('koujitei_users').insert({
-      id: data.user.id,
       name: form.name,
       role: form.role,
       color: form.color,
     })
 
     setLoading(false)
-    if (dbErr) { setError(dbErr.message); return }
+    if (dbErr) {
+      setError(dbErr.code === '23505' ? 'このメールアドレスはすでに登録されています' : dbErr.message)
+      return
+    }
     setShowAdd(false)
-    setForm({ email: '', password: '', name: '', role: 'member', color: COLORS[0] })
+    setForm({ email: '', name: '', role: 'member', color: COLORS[0] })
+    refresh()
+  }
+
+  async function handleDeletePending(id: string) {
+    await supabase.from('koujitei_pending_users').delete().eq('id', id)
     refresh()
   }
 
@@ -86,18 +94,23 @@ export default function UsersClient({ users }: Props) {
           className="px-3 py-1.5 rounded-lg text-xs font-bold"
           style={{ background: '#4a7fff', color: '#fff' }}
         >
-          ＋ ユーザー追加
+          ＋ ユーザーを招待
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-4 space-y-6">
+
+        {/* 招待フォーム */}
         {showAdd && (
           <form
-            onSubmit={handleAdd}
-            className="rounded-xl p-5 mb-5"
+            onSubmit={handleInvite}
+            className="rounded-xl p-5"
             style={{ background: '#161616', border: '1px solid #2a2a2a' }}
           >
-            <h3 className="text-sm font-bold mb-4" style={{ color: '#e8e6e0' }}>新規ユーザー招待</h3>
+            <h3 className="text-sm font-bold mb-1" style={{ color: '#e8e6e0' }}>ユーザーを招待</h3>
+            <p className="text-xs mb-4" style={{ color: '#555' }}>
+              登録後、該当メールアドレスでログイン画面からパスワードを設定して初回ログインできます。
+            </p>
             {error && (
               <div className="rounded-lg px-4 py-3 text-sm mb-3" style={{ background: 'rgba(231,76,60,.12)', color: '#e74c3c', border: '1px solid rgba(231,76,60,.2)' }}>
                 {error}
@@ -105,43 +118,50 @@ export default function UsersClient({ users }: Props) {
             )}
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-xs mb-1" style={{ color: '#888' }}>メールアドレス</label>
-                <input
-                  type="email" required value={form.email}
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
-                />
-              </div>
-              <div>
-                <label className="block text-xs mb-1" style={{ color: '#888' }}>初期パスワード</label>
-                <input
-                  type="text" required value={form.password} minLength={6}
-                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
-                />
-              </div>
-              <div>
                 <label className="block text-xs mb-1" style={{ color: '#888' }}>氏名</label>
                 <input
                   type="text" required value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full rounded-lg px-3 py-2 text-sm outline-none"
                   style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+                  placeholder="佐藤 太郎"
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: '#888' }}>ロール</label>
-                <select
-                  value={form.role}
-                  onChange={e => setForm(f => ({ ...f, role: e.target.value as Role }))}
+                <label className="block text-xs mb-1" style={{ color: '#888' }}>メールアドレス</label>
+                <input
+                  type="email" required value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                   className="w-full rounded-lg px-3 py-2 text-sm outline-none"
                   style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
-                >
-                  <option value="member">担当者 (member)</option>
-                  <option value="admin">管理者 (admin)</option>
-                </select>
+                  placeholder="taro@company.com"
+                />
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-xs mb-1" style={{ color: '#888' }}>ロール</label>
+              <div className="flex gap-2">
+                {(['member', 'admin'] as Role[]).map(r => (
+                  <label
+                    key={r}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm"
+                    style={{
+                      background: form.role === r ? 'rgba(74,127,255,.1)' : '#1e1e1e',
+                      border: `1px solid ${form.role === r ? 'rgba(74,127,255,.3)' : '#2a2a2a'}`,
+                      color: form.role === r ? '#4a7fff' : '#888',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      value={r}
+                      checked={form.role === r}
+                      onChange={() => setForm(f => ({ ...f, role: r }))}
+                      className="hidden"
+                    />
+                    {r === 'member' ? '担当者 (member)' : '管理者 (admin)'}
+                  </label>
+                ))}
               </div>
             </div>
             <div className="mb-4">
@@ -161,58 +181,137 @@ export default function UsersClient({ users }: Props) {
               </div>
             </div>
             <div className="flex gap-3">
-              <button type="button" onClick={() => setShowAdd(false)} className="px-4 py-2 rounded-lg text-sm" style={{ background: '#1e1e1e', color: '#888', border: '1px solid #333' }}>
+              <button
+                type="button"
+                onClick={() => { setShowAdd(false); setError(null) }}
+                className="px-4 py-2 rounded-lg text-sm"
+                style={{ background: '#1e1e1e', color: '#888', border: '1px solid #333' }}
+              >
                 キャンセル
               </button>
-              <button type="submit" disabled={loading} className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50" style={{ background: '#4a7fff', color: '#fff' }}>
-                {loading ? '追加中...' : '追加'}
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
+                style={{ background: '#4a7fff', color: '#fff' }}
+              >
+                {loading ? '登録中...' : '招待リストに追加'}
               </button>
             </div>
           </form>
         )}
 
-        <div className="space-y-2">
-          {users.map(user => (
-            <div
-              key={user.id}
-              className="flex items-center gap-4 px-4 py-3 rounded-xl"
-              style={{ background: '#161616', border: '1px solid #2a2a2a' }}
-            >
-              <span
-                style={{
-                  display: 'inline-block',
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: user.color,
-                  flexShrink: 0,
-                }}
-              />
-              <div className="flex-1">
-                <div className="text-sm font-bold" style={{ color: '#e8e6e0' }}>{user.name}</div>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {COLORS.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => handleColorChange(user, c)}
+        {/* 招待待ち */}
+        {pendingUsers.length > 0 && (
+          <div>
+            <h3 className="text-xs font-bold mb-2 tracking-wider" style={{ color: '#555' }}>
+              招待済み（初回ログイン待ち）
+            </h3>
+            <div className="space-y-2">
+              {pendingUsers.map(pu => (
+                <div
+                  key={pu.id}
+                  className="flex items-center gap-4 px-4 py-3 rounded-xl"
+                  style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+                >
+                  <span
                     style={{
-                      width: 16, height: 16, borderRadius: '50%', background: c,
-                      border: user.color === c ? '2px solid #fff' : '2px solid transparent',
-                      cursor: 'pointer',
+                      display: 'inline-block',
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: pu.color, opacity: 0.5, flexShrink: 0,
                     }}
                   />
-                ))}
-              </div>
-              <select
-                value={user.role}
-                onChange={e => handleRoleChange(user, e.target.value as Role)}
-                className="rounded-lg px-2 py-1.5 text-xs outline-none"
-                style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: user.role === 'admin' ? '#2ecc71' : '#4a7fff' }}
-              >
-                <option value="member">member</option>
-                <option value="admin">admin</option>
-              </select>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold" style={{ color: '#888' }}>{pu.name}</div>
+                    <div className="text-xs mt-0.5" style={{ color: '#555' }}>{pu.email}</div>
+                  </div>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded"
+                    style={{
+                      background: 'rgba(243,156,18,.1)',
+                      color: '#f39c12',
+                      border: '1px solid rgba(243,156,18,.2)',
+                    }}
+                  >
+                    未ログイン
+                  </span>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded"
+                    style={{
+                      background: pu.role === 'admin' ? 'rgba(46,204,113,.1)' : 'rgba(74,127,255,.1)',
+                      color: pu.role === 'admin' ? '#2ecc71' : '#4a7fff',
+                    }}
+                  >
+                    {pu.role}
+                  </span>
+                  <button
+                    onClick={() => handleDeletePending(pu.id)}
+                    className="text-xs px-2 py-1 rounded"
+                    style={{ background: 'rgba(231,76,60,.1)', color: '#e74c3c', border: '1px solid rgba(231,76,60,.2)' }}
+                  >
+                    削除
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* 登録済みユーザー */}
+        <div>
+          <h3 className="text-xs font-bold mb-2 tracking-wider" style={{ color: '#555' }}>
+            登録済みユーザー
+          </h3>
+          {users.length === 0 ? (
+            <p className="text-sm" style={{ color: '#333' }}>まだ誰もログインしていません</p>
+          ) : (
+            <div className="space-y-2">
+              {users.map(user => (
+                <div
+                  key={user.id}
+                  className="flex items-center gap-4 px-4 py-3 rounded-xl"
+                  style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+                >
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: user.color, flexShrink: 0,
+                    }}
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-bold" style={{ color: '#e8e6e0' }}>{user.name}</div>
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {COLORS.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => handleColorChange(user, c)}
+                        style={{
+                          width: 16, height: 16, borderRadius: '50%', background: c,
+                          border: user.color === c ? '2px solid #fff' : '2px solid transparent',
+                          cursor: 'pointer',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <select
+                    value={user.role}
+                    onChange={e => handleRoleChange(user, e.target.value as Role)}
+                    className="rounded-lg px-2 py-1.5 text-xs outline-none"
+                    style={{
+                      background: '#1e1e1e',
+                      border: '1px solid #2a2a2a',
+                      color: user.role === 'admin' ? '#2ecc71' : '#4a7fff',
+                    }}
+                  >
+                    <option value="member">member</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
