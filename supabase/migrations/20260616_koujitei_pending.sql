@@ -12,11 +12,10 @@ CREATE TABLE IF NOT EXISTS koujitei_pending_users (
 
 ALTER TABLE koujitei_pending_users ENABLE ROW LEVEL SECURITY;
 
--- 未認証(anon)でもメールアドレス照合できるように全件 SELECT を許可
--- （name/role/color のみで機密情報なし）
-CREATE POLICY "koujitei_pending_users: 全員参照可"
+-- 認証済みユーザー（管理者）のみ参照可。未認証からの照合は Server Action 経由で行う。
+CREATE POLICY "koujitei_pending_users: 認証済みのみ参照可"
   ON koujitei_pending_users FOR SELECT
-  USING (true);
+  TO authenticated USING (true);
 
 CREATE POLICY "koujitei_pending_users: admin のみ INSERT"
   ON koujitei_pending_users FOR INSERT

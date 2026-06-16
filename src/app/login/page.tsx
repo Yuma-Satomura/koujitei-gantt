@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { checkPendingUser } from '@/app/actions/checkPendingUser'
 
 type Step = 'email' | 'login' | 'setup'
 
@@ -22,32 +23,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Step 1: メールアドレス確認
+  // Step 1: メールアドレス確認（Server Action 経由でサーバー側のみ照合）
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
+    const result = await checkPendingUser(email)
 
-    // pending テーブルにあるか確認（初回登録ユーザー）
-    const { data: pendingUser } = await supabase
-      .from('koujitei_pending_users')
-      .select('name, role, color')
-      .eq('email', email)
-      .maybeSingle()
-
-    if (pendingUser) {
-      // 招待済み・未登録 → パスワード設定画面へ
-      setPending(pendingUser)
+    if (result.found) {
+      setPending({ name: result.name!, role: result.role!, color: result.color! })
       setStep('setup')
-      setLoading(false)
-      return
+    } else {
+      // pending になければ既存ユーザーとしてパスワードログインへ
+      setStep('login')
     }
-
-    // pending にない → 既存ユーザーとしてログイン画面へ
-    // koujitei_users に存在するかは signIn で確認
-    setStep('login')
     setLoading(false)
   }
 
@@ -95,7 +85,6 @@ export default function LoginPage() {
     setLoading(true)
     const supabase = createClient()
 
-    // Auth アカウント作成
     const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
     if (signUpError || !data.user) {
       setError(signUpError?.message ?? 'アカウント作成に失敗しました')
@@ -103,7 +92,6 @@ export default function LoginPage() {
       return
     }
 
-    // koujitei_users にプロフィールを保存
     const { error: insertError } = await supabase.from('koujitei_users').insert({
       id: data.user.id,
       name: pending!.name,
@@ -218,12 +206,7 @@ export default function LoginPage() {
               >
                 {loading ? 'ログイン中...' : 'ログイン'}
               </button>
-              <button
-                type="button"
-                onClick={goBack}
-                className="w-full text-xs py-1"
-                style={{ color: '#555' }}
-              >
+              <button type="button" onClick={goBack} className="w-full text-xs py-1" style={{ color: '#555' }}>
                 ← メールアドレスに戻る
               </button>
             </form>
@@ -237,14 +220,7 @@ export default function LoginPage() {
                 style={{ background: 'rgba(74,127,255,.08)', border: '1px solid rgba(74,127,255,.2)' }}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 8, height: 8,
-                      borderRadius: '50%',
-                      background: pending?.color,
-                    }}
-                  />
+                  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: pending?.color }} />
                   <span className="font-bold text-xs" style={{ color: '#e8e6e0' }}>{pending?.name}</span>
                   <span
                     className="text-xs px-1.5 py-0.5 rounded ml-auto"
@@ -258,7 +234,6 @@ export default function LoginPage() {
                 </div>
                 <div className="text-xs" style={{ color: '#888' }}>{email}</div>
               </div>
-
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: '#888' }}>
                   パスワード（6文字以上）
@@ -297,12 +272,7 @@ export default function LoginPage() {
               >
                 {loading ? '登録中...' : '登録してログイン'}
               </button>
-              <button
-                type="button"
-                onClick={goBack}
-                className="w-full text-xs py-1"
-                style={{ color: '#555' }}
-              >
+              <button type="button" onClick={goBack} className="w-full text-xs py-1" style={{ color: '#555' }}>
                 ← メールアドレスに戻る
               </button>
             </form>
