@@ -1,0 +1,42 @@
+import { createClient } from '@/lib/supabase/server'
+import AdminGanttPage from './AdminGanttPage'
+import { getFiscalYear } from '@/lib/gantt'
+import type { GanttGroup } from '@/lib/types'
+
+export const dynamic = 'force-dynamic'
+
+export default async function AdminPage() {
+  const supabase = await createClient()
+  const fiscalYear = getFiscalYear()
+
+  const [{ data: members }, { data: projects }, { data: assignments }, { data: periods }] =
+    await Promise.all([
+      supabase.from('koujitei_users').select('*').eq('role', 'member').order('name'),
+      supabase.from('koujitei_projects').select('*').eq('fiscal_year', fiscalYear).order('created_at'),
+      supabase.from('koujitei_assignments').select('*'),
+      supabase.from('koujitei_periods').select('*'),
+    ])
+
+  // GanttGroup 構築
+  const groups: GanttGroup[] = (members ?? []).map(member => {
+    const memberAssignments = (assignments ?? []).filter(a => a.user_id === member.id)
+    const rows = memberAssignments.map(assignment => {
+      const project = (projects ?? []).find(p => p.id === assignment.project_id)
+      if (!project) return null
+      const memberPeriods = (periods ?? []).filter(p => p.assignment_id === assignment.id)
+      return { assignment, project, member, periods: memberPeriods }
+    }).filter(Boolean) as GanttGroup['rows']
+
+    return { member, rows }
+  }).filter(g => g.rows.length > 0)
+
+  return (
+    <AdminGanttPage
+      initialGroups={groups}
+      fiscalYear={fiscalYear}
+      members={members ?? []}
+      projects={projects ?? []}
+      assignments={assignments ?? []}
+    />
+  )
+}
