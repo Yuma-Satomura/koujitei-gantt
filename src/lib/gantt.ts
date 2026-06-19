@@ -4,7 +4,7 @@ export function getFiscalYear(date: Date = new Date()): number {
 }
 
 export function getFiscalStart(fiscalYear: number): Date {
-  return new Date(fiscalYear, 3, 1) // April 1
+  return new Date(Date.UTC(fiscalYear, 3, 1)) // April 1 UTC
 }
 
 // 週インデックス (0〜47) への変換
