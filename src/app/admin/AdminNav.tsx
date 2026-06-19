@@ -16,6 +16,7 @@ export default function AdminNav({ userName }: { userName: string }) {
 
   const links = [
     { href: '/admin', label: '工程表', icon: '▦' },
+    { href: '/admin/my-projects', label: 'マイ案件', icon: '📌' },
     { href: '/admin/projects', label: '案件管理', icon: '📋' },
     { href: '/admin/users', label: 'ユーザー管理', icon: '👥' },
   ]
