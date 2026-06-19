@@ -120,7 +120,7 @@ export default function GanttChart({
   }, [supabase, onDataChange])
 
   return (
-    <div ref={printRef} className="overflow-x-auto" style={{ background: '#0f0f0f' }}>
+    <div ref={printRef} className="overflow-x-auto" style={{ background: '#f4f6f9' }}>
       <table
         style={{
           borderCollapse: 'collapse',
@@ -139,12 +139,12 @@ export default function GanttChart({
                 rowSpan={2}
                 style={{
                   padding: '6px 8px',
-                  background: '#1e1e1e',
-                  color: '#888',
+                  background: '#f8f9fa',
+                  color: '#6b7280',
                   fontWeight: 600,
                   fontSize: '10px',
-                  borderBottom: '1px solid #333',
-                  borderRight: '1px solid #2a2a2a',
+                  borderBottom: '1px solid #dde1e7',
+                  borderRight: '1px solid #dde1e7',
                   position: 'sticky',
                   top: 0,
                   zIndex: 20,
@@ -162,12 +162,12 @@ export default function GanttChart({
                 colSpan={m.span}
                 style={{
                   padding: '4px 0',
-                  background: '#1e1e1e',
-                  color: '#e8e6e0',
+                  background: '#f8f9fa',
+                  color: '#1a1d23',
                   fontWeight: 700,
                   fontSize: '10px',
                   textAlign: 'center',
-                  border: '1px solid #2a2a2a',
+                  border: '1px solid #dde1e7',
                   position: 'sticky',
                   top: 0,
                   zIndex: 20,
@@ -183,11 +183,11 @@ export default function GanttChart({
                 key={w}
                 style={{
                   padding: '3px 0',
-                  background: '#161616',
-                  color: '#555',
+                  background: '#ffffff',
+                  color: '#9ca3af',
                   fontSize: '9px',
                   textAlign: 'center',
-                  border: '1px solid #2a2a2a',
+                  border: '1px solid #dde1e7',
                   minWidth: 24,
                   width: 24,
                   position: 'sticky',
@@ -212,7 +212,7 @@ export default function GanttChart({
                 <tr
                   key={row.assignment.id}
                   style={{
-                    borderTop: isFirstInGroup ? '2px solid #2a2a2a' : '1px solid #1e1e1e',
+                    borderTop: isFirstInGroup ? '2px solid #dde1e7' : '1px solid #f8f9fa',
                   }}
                 >
                   {/* 担当列 (グループの最初の行のみ表示) */}
@@ -221,10 +221,10 @@ export default function GanttChart({
                       rowSpan={group.rows.length}
                       style={{
                         padding: '5px 8px',
-                        background: '#161616',
-                        color: '#e8e6e0',
+                        background: '#ffffff',
+                        color: '#1a1d23',
                         fontWeight: 700,
-                        borderRight: '1px solid #2a2a2a',
+                        borderRight: '1px solid #dde1e7',
                         verticalAlign: 'middle',
                       }}
                     >
@@ -256,9 +256,9 @@ export default function GanttChart({
                     onClick={() => setDetailRow(row)}
                     style={{
                       padding: '5px 8px',
-                      background: '#161616',
-                      color: '#e8e6e0',
-                      borderRight: '1px solid #2a2a2a',
+                      background: '#ffffff',
+                      color: '#1a1d23',
+                      borderRight: '1px solid #dde1e7',
                       maxWidth: 120,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -273,9 +273,9 @@ export default function GanttChart({
                   <td
                     style={{
                       padding: '5px 4px',
-                      background: '#161616',
-                      color: '#e8e6e0',
-                      borderRight: '1px solid #2a2a2a',
+                      background: '#ffffff',
+                      color: '#1a1d23',
+                      borderRight: '1px solid #dde1e7',
                       textAlign: 'center',
                       minWidth: 40,
                     }}
@@ -293,9 +293,9 @@ export default function GanttChart({
                         onKeyDown={e => e.key === 'Enter' && handleProgressBlur(row.assignment.id, editingProgress.value)}
                         style={{
                           width: 36,
-                          background: '#1e1e1e',
+                          background: '#f8f9fa',
                           border: '1px solid #4a7fff',
-                          color: '#e8e6e0',
+                          color: '#1a1d23',
                           borderRadius: 4,
                           padding: '1px 2px',
                           fontSize: 11,
@@ -303,7 +303,7 @@ export default function GanttChart({
                         }}
                       />
                     ) : (
-                      <span style={{ color: row.assignment.progress > 0 ? '#4a7fff' : '#555' }}>
+                      <span style={{ color: row.assignment.progress > 0 ? '#4a7fff' : '#9ca3af' }}>
                         {row.assignment.progress}%
                       </span>
                     )}
@@ -313,8 +313,8 @@ export default function GanttChart({
                   <td
                     style={{
                       padding: '5px 4px',
-                      background: '#161616',
-                      borderRight: '1px solid #2a2a2a',
+                      background: '#ffffff',
+                      borderRight: '1px solid #dde1e7',
                       textAlign: 'center',
                       cursor: isAdmin ? 'default' : 'pointer',
                     }}
@@ -324,7 +324,7 @@ export default function GanttChart({
                     {row.assignment.is_complete_this_month ? (
                       <span style={{ color: '#2ecc71', fontWeight: 700 }}>✓</span>
                     ) : (
-                      <span style={{ color: '#333' }}>—</span>
+                      <span style={{ color: '#dde1e7' }}>—</span>
                     )}
                   </td>
 
@@ -361,7 +361,7 @@ export default function GanttChart({
                         onClick={() => !isAdmin && handleCellClick(row.assignment.id, w)}
                         style={{
                           cursor: isAdmin ? 'default' : 'pointer',
-                          border: '1px solid #1e1e1e',
+                          border: '1px solid #f8f9fa',
                           background: isStart ? 'rgba(74,127,255,0.15)' : undefined,
                           position: 'relative',
                         }}
@@ -426,9 +426,9 @@ function FixedCell({ children, style }: { children?: React.ReactNode; style?: Re
     <td
       style={{
         padding: '5px 8px',
-        background: '#161616',
-        color: '#e8e6e0',
-        borderRight: '1px solid #2a2a2a',
+        background: '#ffffff',
+        color: '#1a1d23',
+        borderRight: '1px solid #dde1e7',
         whiteSpace: 'nowrap',
         ...style,
       }}
@@ -461,26 +461,26 @@ function DetailModal({ row, onClose }: { row: GanttRow; onClose: () => void }) {
     >
       <div
         className="rounded-xl p-6 w-full max-w-md"
-        style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+        style={{ background: '#ffffff', border: '1px solid #dde1e7' }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-sm" style={{ color: '#e8e6e0' }}>案件詳細</h3>
-          <button onClick={onClose} style={{ color: '#555', fontSize: 18 }}>×</button>
+          <h3 className="font-bold text-sm" style={{ color: '#1a1d23' }}>案件詳細</h3>
+          <button onClick={onClose} style={{ color: '#9ca3af', fontSize: 18 }}>×</button>
         </div>
         <div className="space-y-2">
           {fields.map(([label, value]) => value != null && value !== '' && (
             <div key={label} className="flex gap-3 text-sm">
-              <span className="w-20 shrink-0 text-xs" style={{ color: '#888' }}>{label}</span>
-              <span style={{ color: '#e8e6e0' }}>{value}</span>
+              <span className="w-20 shrink-0 text-xs" style={{ color: '#6b7280' }}>{label}</span>
+              <span style={{ color: '#1a1d23' }}>{value}</span>
             </div>
           ))}
         </div>
         {row.periods.length > 0 && (
-          <div className="mt-4 pt-4" style={{ borderTop: '1px solid #2a2a2a' }}>
-            <div className="text-xs font-medium mb-2" style={{ color: '#888' }}>工程</div>
+          <div className="mt-4 pt-4" style={{ borderTop: '1px solid #dde1e7' }}>
+            <div className="text-xs font-medium mb-2" style={{ color: '#6b7280' }}>工程</div>
             {row.periods.map(p => (
-              <div key={p.id} className="text-xs py-1" style={{ color: '#e8e6e0' }}>
+              <div key={p.id} className="text-xs py-1" style={{ color: '#1a1d23' }}>
                 {p.start_date} 〜 {p.end_date}
               </div>
             ))}

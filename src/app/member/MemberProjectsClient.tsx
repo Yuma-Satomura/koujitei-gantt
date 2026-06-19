@@ -19,10 +19,10 @@ export default function MemberProjectsClient({ groups, fiscalYear, currentUser }
     <div className="flex flex-col h-full">
       <div
         className="flex items-center gap-3 px-4 py-2.5 shrink-0"
-        style={{ background: '#161616', borderBottom: '1px solid #2a2a2a' }}
+        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7' }}
       >
-        <h2 className="text-sm font-bold" style={{ color: '#e8e6e0' }}>マイ案件</h2>
-        <div className="text-xs ml-2" style={{ color: '#555' }}>
+        <h2 className="text-sm font-bold" style={{ color: '#1a1d23' }}>マイ案件</h2>
+        <div className="text-xs ml-2" style={{ color: '#9ca3af' }}>
           ガントセルをクリック→もう1度クリックで工程を登録。バーをダブルクリックで削除。
         </div>
       </div>
@@ -32,8 +32,8 @@ export default function MemberProjectsClient({ groups, fiscalYear, currentUser }
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="text-3xl mb-3">📋</div>
-              <div className="text-sm" style={{ color: '#555' }}>アサインされた案件はありません</div>
-              <div className="text-xs mt-1" style={{ color: '#333' }}>管理者が案件を割り当てると表示されます</div>
+              <div className="text-sm" style={{ color: '#9ca3af' }}>アサインされた案件はありません</div>
+              <div className="text-xs mt-1" style={{ color: '#dde1e7' }}>管理者が案件を割り当てると表示されます</div>
             </div>
           </div>
         ) : (

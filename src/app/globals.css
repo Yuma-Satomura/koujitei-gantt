@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0f0f0f;
-  --bg2: #161616;
-  --bg3: #1e1e1e;
-  --border: #2a2a2a;
-  --text: #e8e6e0;
-  --text2: #888;
+  --bg: #f4f6f9;
+  --bg2: #ffffff;
+  --bg3: #f0f2f5;
+  --border: #dde1e7;
+  --text: #1a1d23;
+  --text2: #6b7280;
   --accent: #4a7fff;
 }
 
@@ -43,5 +43,5 @@ body {
 
 /* スクロールバーを細く */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg2); }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--bg3); }
+::-webkit-scrollbar-thumb { background: #c4c9d4; border-radius: 3px; }

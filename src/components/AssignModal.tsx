@@ -66,15 +66,15 @@ export default function AssignModal({ project, members, assignedUserIds, onClose
     >
       <div
         className="rounded-xl p-6 w-full max-w-sm mx-4"
-        style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+        style={{ background: '#ffffff', border: '1px solid #dde1e7' }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-bold text-sm" style={{ color: '#e8e6e0' }}>担当者をアサイン</h3>
-            <p className="text-xs mt-0.5 truncate max-w-56" style={{ color: '#888' }}>{project.project_name}</p>
+            <h3 className="font-bold text-sm" style={{ color: '#1a1d23' }}>担当者をアサイン</h3>
+            <p className="text-xs mt-0.5 truncate max-w-56" style={{ color: '#6b7280' }}>{project.project_name}</p>
           </div>
-          <button onClick={onClose} style={{ color: '#555', fontSize: 18 }}>×</button>
+          <button onClick={onClose} style={{ color: '#9ca3af', fontSize: 18 }}>×</button>
         </div>
 
         {error && (
@@ -89,8 +89,8 @@ export default function AssignModal({ project, members, assignedUserIds, onClose
               key={m.id}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer"
               style={{
-                background: selected.has(m.id) ? 'rgba(74,127,255,.1)' : '#1e1e1e',
-                border: `1px solid ${selected.has(m.id) ? 'rgba(74,127,255,.3)' : '#2a2a2a'}`,
+                background: selected.has(m.id) ? 'rgba(74,127,255,.1)' : '#f8f9fa',
+                border: `1px solid ${selected.has(m.id) ? 'rgba(74,127,255,.3)' : '#dde1e7'}`,
               }}
             >
               <input
@@ -109,7 +109,7 @@ export default function AssignModal({ project, members, assignedUserIds, onClose
                   background: m.color,
                 }}
               />
-              <span className="text-sm" style={{ color: '#e8e6e0' }}>{m.name}</span>
+              <span className="text-sm" style={{ color: '#1a1d23' }}>{m.name}</span>
             </label>
           ))}
         </div>
@@ -118,7 +118,7 @@ export default function AssignModal({ project, members, assignedUserIds, onClose
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm"
-            style={{ background: '#1e1e1e', color: '#888', border: '1px solid #333' }}
+            style={{ background: '#f8f9fa', color: '#6b7280', border: '1px solid #dde1e7 '}}
           >
             キャンセル
           </button>

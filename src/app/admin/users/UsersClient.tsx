@@ -85,9 +85,9 @@ export default function UsersClient({ users, pendingUsers }: Props) {
     <div className="flex flex-col h-full">
       <div
         className="flex items-center gap-3 px-4 py-2.5 shrink-0"
-        style={{ background: '#161616', borderBottom: '1px solid #2a2a2a' }}
+        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7' }}
       >
-        <h2 className="text-sm font-bold" style={{ color: '#e8e6e0' }}>ユーザー管理</h2>
+        <h2 className="text-sm font-bold" style={{ color: '#1a1d23' }}>ユーザー管理</h2>
         <div className="flex-1" />
         <button
           onClick={() => setShowAdd(!showAdd)}
@@ -105,10 +105,10 @@ export default function UsersClient({ users, pendingUsers }: Props) {
           <form
             onSubmit={handleInvite}
             className="rounded-xl p-5"
-            style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+            style={{ background: '#ffffff', border: '1px solid #dde1e7' }}
           >
-            <h3 className="text-sm font-bold mb-1" style={{ color: '#e8e6e0' }}>ユーザーを招待</h3>
-            <p className="text-xs mb-4" style={{ color: '#555' }}>
+            <h3 className="text-sm font-bold mb-1" style={{ color: '#1a1d23' }}>ユーザーを招待</h3>
+            <p className="text-xs mb-4" style={{ color: '#9ca3af' }}>
               登録後、該当メールアドレスでログイン画面からパスワードを設定して初回ログインできます。
             </p>
             {error && (
@@ -118,37 +118,37 @@ export default function UsersClient({ users, pendingUsers }: Props) {
             )}
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-xs mb-1" style={{ color: '#888' }}>氏名</label>
+                <label className="block text-xs mb-1" style={{ color: '#6b7280' }}>氏名</label>
                 <input
                   type="text" required value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+                  style={{ background: '#f8f9fa', border: '1px solid #dde1e7', color: '#1a1d23' }}
                   placeholder="佐藤 太郎"
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: '#888' }}>メールアドレス</label>
+                <label className="block text-xs mb-1" style={{ color: '#6b7280' }}>メールアドレス</label>
                 <input
                   type="email" required value={form.email}
                   onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                   className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+                  style={{ background: '#f8f9fa', border: '1px solid #dde1e7', color: '#1a1d23' }}
                   placeholder="taro@company.com"
                 />
               </div>
             </div>
             <div className="mb-3">
-              <label className="block text-xs mb-1" style={{ color: '#888' }}>ロール</label>
+              <label className="block text-xs mb-1" style={{ color: '#6b7280' }}>ロール</label>
               <div className="flex gap-2">
                 {(['member', 'admin'] as Role[]).map(r => (
                   <label
                     key={r}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm"
                     style={{
-                      background: form.role === r ? 'rgba(74,127,255,.1)' : '#1e1e1e',
-                      border: `1px solid ${form.role === r ? 'rgba(74,127,255,.3)' : '#2a2a2a'}`,
-                      color: form.role === r ? '#4a7fff' : '#888',
+                      background: form.role === r ? 'rgba(74,127,255,.1)' : '#f8f9fa',
+                      border: `1px solid ${form.role === r ? 'rgba(74,127,255,.3)' : '#dde1e7'}`,
+                      color: form.role === r ? '#4a7fff' : '#6b7280',
                     }}
                   >
                     <input
@@ -165,7 +165,7 @@ export default function UsersClient({ users, pendingUsers }: Props) {
               </div>
             </div>
             <div className="mb-4">
-              <label className="block text-xs mb-2" style={{ color: '#888' }}>ガントバーの色</label>
+              <label className="block text-xs mb-2" style={{ color: '#6b7280' }}>ガントバーの色</label>
               <div className="flex gap-2 flex-wrap">
                 {COLORS.map(c => (
                   <button
@@ -185,7 +185,7 @@ export default function UsersClient({ users, pendingUsers }: Props) {
                 type="button"
                 onClick={() => { setShowAdd(false); setError(null) }}
                 className="px-4 py-2 rounded-lg text-sm"
-                style={{ background: '#1e1e1e', color: '#888', border: '1px solid #333' }}
+                style={{ background: '#f8f9fa', color: '#6b7280', border: '1px solid #dde1e7 '}}
               >
                 キャンセル
               </button>
@@ -204,7 +204,7 @@ export default function UsersClient({ users, pendingUsers }: Props) {
         {/* 招待待ち */}
         {pendingUsers.length > 0 && (
           <div>
-            <h3 className="text-xs font-bold mb-2 tracking-wider" style={{ color: '#555' }}>
+            <h3 className="text-xs font-bold mb-2 tracking-wider" style={{ color: '#9ca3af' }}>
               招待済み（初回ログイン待ち）
             </h3>
             <div className="space-y-2">
@@ -212,7 +212,7 @@ export default function UsersClient({ users, pendingUsers }: Props) {
                 <div
                   key={pu.id}
                   className="flex items-center gap-4 px-4 py-3 rounded-xl"
-                  style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+                  style={{ background: '#ffffff', border: '1px solid #dde1e7' }}
                 >
                   <span
                     style={{
@@ -222,8 +222,8 @@ export default function UsersClient({ users, pendingUsers }: Props) {
                     }}
                   />
                   <div className="flex-1">
-                    <div className="text-sm font-bold" style={{ color: '#888' }}>{pu.name}</div>
-                    <div className="text-xs mt-0.5" style={{ color: '#555' }}>{pu.email}</div>
+                    <div className="text-sm font-bold" style={{ color: '#6b7280' }}>{pu.name}</div>
+                    <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{pu.email}</div>
                   </div>
                   <span
                     className="text-xs px-2 py-0.5 rounded"
@@ -259,18 +259,18 @@ export default function UsersClient({ users, pendingUsers }: Props) {
 
         {/* 登録済みユーザー */}
         <div>
-          <h3 className="text-xs font-bold mb-2 tracking-wider" style={{ color: '#555' }}>
+          <h3 className="text-xs font-bold mb-2 tracking-wider" style={{ color: '#9ca3af' }}>
             登録済みユーザー
           </h3>
           {users.length === 0 ? (
-            <p className="text-sm" style={{ color: '#333' }}>まだ誰もログインしていません</p>
+            <p className="text-sm" style={{ color: '#dde1e7' }}>まだ誰もログインしていません</p>
           ) : (
             <div className="space-y-2">
               {users.map(user => (
                 <div
                   key={user.id}
                   className="flex items-center gap-4 px-4 py-3 rounded-xl"
-                  style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+                  style={{ background: '#ffffff', border: '1px solid #dde1e7' }}
                 >
                   <span
                     style={{
@@ -280,7 +280,7 @@ export default function UsersClient({ users, pendingUsers }: Props) {
                     }}
                   />
                   <div className="flex-1">
-                    <div className="text-sm font-bold" style={{ color: '#e8e6e0' }}>{user.name}</div>
+                    <div className="text-sm font-bold" style={{ color: '#1a1d23' }}>{user.name}</div>
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
                     {COLORS.map(c => (
@@ -300,8 +300,8 @@ export default function UsersClient({ users, pendingUsers }: Props) {
                     onChange={e => handleRoleChange(user, e.target.value as Role)}
                     className="rounded-lg px-2 py-1.5 text-xs outline-none"
                     style={{
-                      background: '#1e1e1e',
-                      border: '1px solid #2a2a2a',
+                      background: '#f8f9fa',
+                      border: '1px solid #dde1e7',
                       color: user.role === 'admin' ? '#2ecc71' : '#4a7fff',
                     }}
                   >

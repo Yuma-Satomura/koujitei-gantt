@@ -44,16 +44,16 @@ export default function ProjectsClient({ projects, members, assignments, fiscalY
       {/* ツールバー */}
       <div
         className="flex items-center gap-3 px-4 py-2.5 shrink-0"
-        style={{ background: '#161616', borderBottom: '1px solid #2a2a2a' }}
+        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7' }}
       >
-        <h2 className="text-sm font-bold" style={{ color: '#e8e6e0' }}>案件管理</h2>
+        <h2 className="text-sm font-bold" style={{ color: '#1a1d23' }}>案件管理</h2>
         <input
           type="text"
           placeholder="工番・件名・納入先で検索..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="rounded-lg px-3 py-1.5 text-sm outline-none w-64"
-          style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+          style={{ background: '#f8f9fa', border: '1px solid #dde1e7', color: '#1a1d23' }}
         />
         <div className="flex-1" />
         <button
@@ -75,11 +75,11 @@ export default function ProjectsClient({ projects, members, assignments, fiscalY
                   key={h}
                   style={{
                     padding: '8px 10px',
-                    background: '#1e1e1e',
-                    color: '#888',
+                    background: '#f8f9fa',
+                    color: '#6b7280',
                     fontWeight: 500,
                     textAlign: 'left',
-                    borderBottom: '1px solid #2a2a2a',
+                    borderBottom: '1px solid #dde1e7',
                     fontSize: 11,
                     whiteSpace: 'nowrap',
                   }}
@@ -95,7 +95,7 @@ export default function ProjectsClient({ projects, members, assignments, fiscalY
               const assignedMembers = projectAssignments.map(a => members.find(m => m.id === a.user_id)).filter(Boolean)
 
               return (
-                <tr key={project.id} style={{ borderBottom: '1px solid #1e1e1e' }}>
+                <tr key={project.id} style={{ borderBottom: '1px solid #f8f9fa' }}>
                   <Td>{project.kouban}</Td>
                   <Td>{project.client_name}</Td>
                   <Td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -125,7 +125,7 @@ export default function ProjectsClient({ projects, members, assignments, fiscalY
                       <button
                         onClick={() => setEditProject(project)}
                         className="px-2 py-1 rounded text-xs"
-                        style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}
+                        style={{ background: '#f8f9fa', color: '#6b7280', border: '1px solid #dde1e7' }}
                       >
                         編集
                       </button>
@@ -151,7 +151,7 @@ export default function ProjectsClient({ projects, members, assignments, fiscalY
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <div className="text-center py-16 text-sm" style={{ color: '#555' }}>
+          <div className="text-center py-16 text-sm" style={{ color: '#9ca3af' }}>
             案件が見つかりません
           </div>
         )}
@@ -178,7 +178,7 @@ export default function ProjectsClient({ projects, members, assignments, fiscalY
 
 function Td({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <td style={{ padding: '8px 10px', color: '#e8e6e0', background: '#161616', verticalAlign: 'middle', ...style }}>
+    <td style={{ padding: '8px 10px', color: '#1a1d23', background: '#ffffff', verticalAlign: 'middle', ...style }}>
       {children ?? ''}
     </td>
   )

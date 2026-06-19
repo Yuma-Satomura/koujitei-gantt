@@ -79,7 +79,7 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
       {/* ツールバー */}
       <div
         className="flex items-center gap-3 px-4 py-2.5 shrink-0 flex-wrap"
-        style={{ background: '#161616', borderBottom: '1px solid #2a2a2a' }}
+        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7' }}
       >
         <input
           type="text"
@@ -87,7 +87,7 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="rounded-lg px-3 py-1.5 text-sm outline-none w-64"
-          style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+          style={{ background: '#f8f9fa', border: '1px solid #dde1e7', color: '#1a1d23' }}
         />
 
         <div className="flex gap-1">
@@ -97,9 +97,9 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
               onClick={() => setSortKey(s.key)}
               className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
               style={{
-                background: sortKey === s.key ? 'rgba(74,127,255,.15)' : '#1e1e1e',
-                color: sortKey === s.key ? '#4a7fff' : '#888',
-                border: `1px solid ${sortKey === s.key ? 'rgba(74,127,255,.3)' : '#2a2a2a'}`,
+                background: sortKey === s.key ? 'rgba(74,127,255,.15)' : '#f8f9fa',
+                color: sortKey === s.key ? '#4a7fff' : '#6b7280',
+                border: `1px solid ${sortKey === s.key ? 'rgba(74,127,255,.3)' : '#dde1e7'}`,
               }}
             >
               {s.label}
@@ -120,14 +120,14 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
         <button
           onClick={() => handlePDF('first')}
           className="px-3 py-1.5 rounded-lg text-xs"
-          style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}
+          style={{ background: '#f8f9fa', color: '#6b7280', border: '1px solid #dde1e7' }}
         >
           PDF 前半
         </button>
         <button
           onClick={() => handlePDF('second')}
           className="px-3 py-1.5 rounded-lg text-xs"
-          style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}
+          style={{ background: '#f8f9fa', color: '#6b7280', border: '1px solid #dde1e7' }}
         >
           PDF 後半
         </button>

@@ -83,14 +83,14 @@ export default function ProjectModal({ project, fiscalYear, onClose, onSaved }: 
     >
       <div
         className="rounded-xl p-6 w-full max-w-lg mx-4"
-        style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+        style={{ background: '#ffffff', border: '1px solid #dde1e7' }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold" style={{ color: '#e8e6e0' }}>
+          <h3 className="font-bold" style={{ color: '#1a1d23' }}>
             {project ? '案件を編集' : '案件を新規登録'}
           </h3>
-          <button onClick={onClose} style={{ color: '#555', fontSize: 18 }}>×</button>
+          <button onClick={onClose} style={{ color: '#9ca3af', fontSize: 18 }}>×</button>
         </div>
 
         {error && (
@@ -156,7 +156,7 @@ export default function ProjectModal({ project, fiscalYear, onClose, onSaved }: 
               type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-lg text-sm"
-              style={{ background: '#1e1e1e', color: '#888', border: '1px solid #333' }}
+              style={{ background: '#f8f9fa', color: '#6b7280', border: '1px solid #dde1e7 '}}
             >
               キャンセル
             </button>
@@ -178,7 +178,7 @@ export default function ProjectModal({ project, fiscalYear, onClose, onSaved }: 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs mb-1" style={{ color: '#888' }}>{label}</label>
+      <label className="block text-xs mb-1" style={{ color: '#6b7280' }}>{label}</label>
       {children}
     </div>
   )
@@ -199,7 +199,7 @@ function Input({ value, onChange, type = 'text', required, placeholder }: {
       required={required}
       placeholder={placeholder}
       className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-      style={{ background: '#1e1e1e', border: '1px solid #333', color: '#e8e6e0' }}
+      style={{ background: '#f8f9fa', border: '1px solid #dde1e7', color: '#1a1d23' }}
     />
   )
 }

@@ -16,7 +16,7 @@ export default async function MemberLayout({ children }: { children: React.React
   if (!kUser) redirect('/login')
 
   return (
-    <div className="flex h-screen" style={{ background: '#0f0f0f' }}>
+    <div className="flex h-screen" style={{ background: '#f4f6f9' }}>
       <MemberNav userName={kUser.name} userRole={kUser.role} />
       <main className="flex-1 overflow-hidden flex flex-col">
         {children}

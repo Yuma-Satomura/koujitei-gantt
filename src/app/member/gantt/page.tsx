@@ -39,9 +39,9 @@ export default async function MemberGanttPage() {
     <div className="flex flex-col h-full">
       <div
         className="flex items-center gap-3 px-4 py-2.5 shrink-0"
-        style={{ background: '#161616', borderBottom: '1px solid #2a2a2a' }}
+        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7' }}
       >
-        <h2 className="text-sm font-bold" style={{ color: '#e8e6e0' }}>全体工程表</h2>
+        <h2 className="text-sm font-bold" style={{ color: '#1a1d23' }}>全体工程表</h2>
         <span
           className="text-xs px-2 py-0.5 rounded"
           style={{ background: 'rgba(74,127,255,.1)', color: '#4a7fff', border: '1px solid rgba(74,127,255,.2)' }}

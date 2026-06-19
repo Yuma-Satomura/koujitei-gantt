@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (kUser?.role !== 'admin') redirect('/member')
 
   return (
-    <div className="flex h-screen" style={{ background: '#0f0f0f' }}>
+    <div className="flex h-screen" style={{ background: '#f4f6f9' }}>
       <AdminNav userName={kUser.name} />
       <main className="flex-1 overflow-hidden flex flex-col">
         {children}
