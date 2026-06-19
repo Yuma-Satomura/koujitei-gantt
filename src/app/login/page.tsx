@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { checkPendingUser } from '@/app/actions/checkPendingUser'
+import { registerUser } from '@/app/actions/registerUser'
 
 type Step = 'email' | 'login' | 'setup'
 
@@ -92,20 +93,19 @@ export default function LoginPage() {
       return
     }
 
-    const { error: insertError } = await supabase.from('koujitei_users').insert({
-      id: data.user.id,
+    // Server Action でサービスロールキーを使って保存（RLS バイパス）
+    const { error: registerError } = await registerUser({
+      userId: data.user.id,
+      email,
       name: pending!.name,
       role: pending!.role,
       color: pending!.color,
     })
-    if (insertError) {
-      setError('プロフィールの保存に失敗しました: ' + insertError.message)
+    if (registerError) {
+      setError('プロフィールの保存に失敗しました: ' + registerError)
       setLoading(false)
       return
     }
-
-    // pending テーブルから削除
-    await supabase.from('koujitei_pending_users').delete().eq('email', email)
 
     router.push(pending!.role === 'admin' ? '/admin' : '/member')
     router.refresh()
