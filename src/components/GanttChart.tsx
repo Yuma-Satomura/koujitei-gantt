@@ -175,13 +175,13 @@ export default function GanttChart({
           : r
         ),
       })))
-      // バックグラウンドでDB保存
+      // バックグラウンドでDB保存（成否に関わらずrefreshでローカル状態を同期）
       supabase.from('koujitei_periods').insert({
         assignment_id: assignmentId,
         start_date: startDate,
         end_date: endDate,
         sort_order: 1,
-      }).then(({ error }) => { if (!error) onDataChange?.() })
+      }).then(() => onDataChange?.())
     }
   }, [selecting, isAdmin, fiscalYear, supabase, onDataChange])
 
@@ -445,10 +445,10 @@ export default function GanttChart({
                         onMouseLeave={() => isSelecting && setHoverWeek(null)}
                         onClick={() => !isAdmin && handleCellClick(row.assignment.id, w, coveredPeriods.length > 0)}
                         style={{
-                          cursor: isAdmin ? 'default' : 'pointer',
-                          border: '1px solid #f8f9fa',
+                          cursor: isAdmin ? 'default' : (isDeleteMode ? 'crosshair' : 'pointer'),
+                          border: isDeleteMode && isHovered ? '1px solid rgba(231,76,60,0.4)' : '1px solid #f8f9fa',
                           background: isStart
-                            ? (isDeleteMode ? 'rgba(231,76,60,0.15)' : 'rgba(74,127,255,0.15)')
+                            ? (isDeleteMode ? 'rgba(231,76,60,0.12)' : 'rgba(74,127,255,0.15)')
                             : undefined,
                           position: 'relative',
                         }}
@@ -459,6 +459,8 @@ export default function GanttChart({
                           const e = dateToWeekIndex(p.end_date, fiscalYear)
                           const isBarStart = w === s
                           const isBarEnd = w === e
+                          // 削除モード：選択済みセルとホバー範囲を赤く表示
+                          const showDeleteColor = isDeleteMode && (isStart || isHovered)
                           return (
                             <div
                               key={p.id}
@@ -466,7 +468,8 @@ export default function GanttChart({
                               style={{
                                 left: isBarStart ? 2 : 0,
                                 right: isBarEnd ? 2 : 0,
-                                background: isDeleteMode && isHovered ? 'rgba(231,76,60,0.6)' : group.member.color,
+                                background: showDeleteColor ? '#e74c3c' : group.member.color,
+                                opacity: showDeleteColor ? 0.75 : 0.85,
                                 borderRadius: `${isBarStart ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarStart ? 3 : 0}px`,
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}`}
