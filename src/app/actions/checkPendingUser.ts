@@ -1,7 +1,5 @@
 'use server'
 
-import { createClient } from '@supabase/supabase-js'
-
 interface PendingResult {
   found: boolean
   name?: string
@@ -9,22 +7,40 @@ interface PendingResult {
   color?: string
 }
 
-// SECURITY DEFINER 関数経由で照合（RLS をバイパス、サービスロールキー不要）
-// 自分のメールアドレスを知っている人が1件だけ確認できる設計。
+// Supabase REST API を直接呼び出す（サービスロールキーで RLS バイパス）
+// スキーマキャッシュ不要・クライアント初期化不要で最も確実
 export async function checkPendingUser(email: string): Promise<PendingResult> {
   if (!email || !email.includes('@')) return { found: false }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  const { data, error } = await supabase
-    .rpc('check_koujitei_pending', { p_email: email })
+  if (!supabaseUrl || !serviceKey) {
+    console.log('[CPU] env missing:', { hasUrl: !!supabaseUrl, hasKey: !!serviceKey })
+    return { found: false }
+  }
 
-  console.log(`[CPU] d=${JSON.stringify(data)} e=${error?.code}/${error?.message} em=${email}`)
+  const normalized = email.toLowerCase().trim()
+  const url = `${supabaseUrl}/rest/v1/koujitei_pending_users?email=eq.${encodeURIComponent(normalized)}&select=name,role,color`
 
-  if (error || !data || data.length === 0) return { found: false }
-  const row = data[0]
-  return { found: true, name: row.name, role: row.role, color: row.color }
+  const res = await fetch(url, {
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    cache: 'no-store',
+  })
+
+  console.log('[CPU] status:', res.status, 'email:', normalized)
+
+  if (!res.ok) {
+    console.log('[CPU] error body:', await res.text())
+    return { found: false }
+  }
+
+  const data = await res.json()
+  console.log('[CPU] data:', JSON.stringify(data))
+
+  if (!Array.isArray(data) || data.length === 0) return { found: false }
+  return { found: true, name: data[0].name, role: data[0].role, color: data[0].color }
 }
