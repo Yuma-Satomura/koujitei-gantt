@@ -185,22 +185,33 @@ export default function GanttChart({
     }
   }, [selecting, isAdmin, fiscalYear, supabase, onDataChange])
 
-  const handleProgressBlur = useCallback(async (assignmentId: string, value: string) => {
+  const handleProgressBlur = useCallback((assignmentId: string, value: string) => {
     const num = Math.max(0, Math.min(100, parseFloat(value) || 0))
-    await supabase
-      .from('koujitei_assignments')
-      .update({ progress: num })
-      .eq('id', assignmentId)
+    // 即時反映
+    setLocalGroups(prev => prev.map(g => ({
+      ...g,
+      rows: g.rows.map(r => r.assignment.id === assignmentId
+        ? { ...r, assignment: { ...r.assignment, progress: num } }
+        : r
+      ),
+    })))
     setEditingProgress(null)
-    onDataChange?.()
+    // バックグラウンドでDB保存
+    supabase.from('koujitei_assignments').update({ progress: num }).eq('id', assignmentId)
+      .then(() => onDataChange?.())
   }, [supabase, onDataChange])
 
-  const handleCompleteToggle = useCallback(async (assignmentId: string, current: boolean) => {
-    await supabase
-      .from('koujitei_assignments')
-      .update({ is_complete_this_month: !current })
-      .eq('id', assignmentId)
-    onDataChange?.()
+  const handleCompleteToggle = useCallback((assignmentId: string, current: boolean) => {
+    const next = !current
+    setLocalGroups(prev => prev.map(g => ({
+      ...g,
+      rows: g.rows.map(r => r.assignment.id === assignmentId
+        ? { ...r, assignment: { ...r.assignment, is_complete_this_month: next } }
+        : r
+      ),
+    })))
+    supabase.from('koujitei_assignments').update({ is_complete_this_month: next }).eq('id', assignmentId)
+      .then(() => onDataChange?.())
   }, [supabase, onDataChange])
 
   return (
