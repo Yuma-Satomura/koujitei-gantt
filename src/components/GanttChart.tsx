@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useCallback, useRef } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import type { GanttGroup, Period, GanttRow } from '@/lib/types'
 import {
   dateToWeekIndex,
@@ -43,6 +43,10 @@ export default function GanttChart({
   const weekRange = getWeekRange(halfYear)
   const weeks = Array.from({ length: weekRange.end - weekRange.start + 1 }, (_, i) => i + weekRange.start)
 
+  // 楽観的UI用ローカルstate（サーバーrefresh前に即時反映）
+  const [localGroups, setLocalGroups] = useState(groups)
+  useEffect(() => { setLocalGroups(groups) }, [groups])
+
   // クリック入力ステート (担当者のみ)
   const [selecting, setSelecting] = useState<{
     assignmentId: string
@@ -71,9 +75,8 @@ export default function GanttChart({
     }))
   }, [weekRange])
 
-  // セルクリック (担当者用)
-  // hasPeriod: クリックしたセルにバーがあるか
-  const handleCellClick = useCallback(async (assignmentId: string, weekIdx: number, hasPeriod: boolean) => {
+  // セルクリック (担当者用) — 楽観的UI更新でラグなし
+  const handleCellClick = useCallback((assignmentId: string, weekIdx: number, hasPeriod: boolean) => {
     if (isAdmin) return
 
     if (!selecting || selecting.assignmentId !== assignmentId) {
@@ -83,41 +86,58 @@ export default function GanttChart({
 
     const start = Math.min(selecting.startWeek, weekIdx)
     const end = Math.max(selecting.startWeek, weekIdx)
+    const mode = selecting.mode
 
-    if (selecting.mode === 'delete') {
-      const { data: periods } = await supabase
-        .from('koujitei_periods')
-        .select('id, start_date, end_date')
-        .eq('assignment_id', assignmentId)
-      const toDelete = (periods ?? []).filter(p => {
-        const ps = dateToWeekIndex(p.start_date, fiscalYear)
-        const pe = dateToWeekIndex(p.end_date, fiscalYear)
-        return ps <= end && pe >= start
+    // UI を即時更新（ラグなし）
+    setSelecting(null)
+    setHoverWeek(null)
+
+    if (mode === 'delete') {
+      // ローカルstateから対象期間を取得して即削除
+      setLocalGroups(prev => {
+        const toDeleteIds = new Set<string>()
+        prev.forEach(g => g.rows.forEach(r => {
+          if (r.assignment.id !== assignmentId) return
+          r.periods.forEach(p => {
+            const ps = dateToWeekIndex(p.start_date, fiscalYear)
+            const pe = dateToWeekIndex(p.end_date, fiscalYear)
+            if (ps <= end && pe >= start) toDeleteIds.add(p.id)
+          })
+        }))
+        if (toDeleteIds.size === 0) return prev
+        // バックグラウンドでDB削除
+        Promise.all([...toDeleteIds].map(id =>
+          supabase.from('koujitei_periods').delete().eq('id', id)
+        )).then(() => onDataChange?.())
+        return prev.map(g => ({
+          ...g,
+          rows: g.rows.map(r => r.assignment.id === assignmentId
+            ? { ...r, periods: r.periods.filter(p => !toDeleteIds.has(p.id)) }
+            : r
+          ),
+        }))
       })
-      for (const p of toDelete) {
-        await supabase.from('koujitei_periods').delete().eq('id', p.id)
-      }
-      if (toDelete.length > 0) onDataChange?.()
     } else {
       const startDate = toISODate(weekIndexToDate(start, fiscalYear))
       const endDate = toISODate(weekIndexToEndDate(end, fiscalYear))
-      const { error } = await supabase.from('koujitei_periods').insert({
+      const tempId = 'tmp-' + Date.now()
+      // バーを即表示
+      setLocalGroups(prev => prev.map(g => ({
+        ...g,
+        rows: g.rows.map(r => r.assignment.id === assignmentId
+          ? { ...r, periods: [...r.periods, { id: tempId, assignment_id: assignmentId, start_date: startDate, end_date: endDate, sort_order: 1, created_at: '' }] }
+          : r
+        ),
+      })))
+      // バックグラウンドでDB保存
+      supabase.from('koujitei_periods').insert({
         assignment_id: assignmentId,
         start_date: startDate,
         end_date: endDate,
         sort_order: 1,
-      })
-      if (!error) onDataChange?.()
+      }).then(({ error }) => { if (!error) onDataChange?.() })
     }
-
-    setSelecting(null)
-    setHoverWeek(null)
   }, [selecting, isAdmin, fiscalYear, supabase, onDataChange])
-
-  const handleDeletePeriod = useCallback(async (periodId: string) => {
-    await supabase.from('koujitei_periods').delete().eq('id', periodId)
-    onDataChange?.()
-  }, [supabase, onDataChange])
 
   const handleProgressBlur = useCallback(async (assignmentId: string, value: string) => {
     const num = Math.max(0, Math.min(100, parseFloat(value) || 0))
@@ -221,7 +241,7 @@ export default function GanttChart({
 
         {/* ボディ */}
         <tbody>
-          {groups.map((group, gi) => (
+          {localGroups.map((group, gi) => (
             group.rows.map((row, ri) => {
               const isFirstInGroup = ri === 0
               const isLastInGroup = ri === group.rows.length - 1
