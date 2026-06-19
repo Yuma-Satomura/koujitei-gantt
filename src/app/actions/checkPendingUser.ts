@@ -19,10 +19,12 @@ export async function checkPendingUser(email: string): Promise<PendingResult> {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .rpc('check_koujitei_pending', { p_email: email })
 
-  if (!data || data.length === 0) return { found: false }
+  console.log('[checkPendingUser]', JSON.stringify({ email, data, error }))
+
+  if (error || !data || data.length === 0) return { found: false }
   const row = data[0]
   return { found: true, name: row.name, role: row.role, color: row.color }
 }
