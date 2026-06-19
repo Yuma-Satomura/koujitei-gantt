@@ -59,7 +59,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     if (password !== passwordConfirm) { setError('パスワードが一致しません'); return }
-    if (password.length < 6) { setError('パスワードは6文字以上で設定してください'); return }
+    if (password.length < 8) { setError('パスワードは8文字以上で設定してください'); return }
     setLoading(true)
     const supabase = createClient()
     const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
@@ -168,8 +168,8 @@ export default function LoginPage() {
                 <div className="text-xs" style={{ color: '#6b7280' }}>{email}</div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: '#6b7280' }}>パスワード（6文字以上）</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} autoFocus
+                <label className="block text-xs font-medium mb-1.5" style={{ color: '#6b7280' }}>パスワード（8文字以上）</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} autoFocus
                   className="w-full rounded-lg px-3 py-2.5 text-sm outline-none" style={inputStyle} placeholder="••••••••" />
               </div>
               <div>
