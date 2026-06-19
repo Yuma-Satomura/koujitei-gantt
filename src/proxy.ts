@@ -43,14 +43,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(role === 'admin' ? '/admin' : '/member', request.url))
   }
 
-  if (user && pathname.startsWith('/admin')) {
+  if (user && (pathname.startsWith('/admin') || pathname.startsWith('/member'))) {
     const { data: kUser } = await supabase
       .from('koujitei_users')
       .select('role')
       .eq('id', user.id)
       .single()
-    if (kUser?.role !== 'admin') {
+    const role = kUser?.role ?? 'member'
+    if (pathname.startsWith('/admin') && role !== 'admin') {
       return NextResponse.redirect(new URL('/member', request.url))
+    }
+    if (pathname === '/member' && role === 'admin') {
+      return NextResponse.redirect(new URL('/admin', request.url))
     }
   }
 
