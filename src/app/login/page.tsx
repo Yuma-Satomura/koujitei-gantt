@@ -93,19 +93,21 @@ export default function LoginPage() {
       return
     }
 
-    // Server Action でサービスロールキーを使って保存（RLS バイパス）
-    const { error: registerError } = await registerUser({
-      userId: data.user.id,
-      email,
+    // signUp 後のセッションで自身の koujitei_users レコードを作成（RLS: pending ユーザー自己登録）
+    const { error: insertError } = await supabase.from('koujitei_users').insert({
+      id: data.user.id,
       name: pending!.name,
       role: pending!.role,
       color: pending!.color,
     })
-    if (registerError) {
-      setError('プロフィールの保存に失敗しました: ' + registerError)
+    if (insertError) {
+      setError('プロフィールの保存に失敗しました: ' + insertError.message)
       setLoading(false)
       return
     }
+
+    // pending_users から自分のレコードを削除（RLS: 本人削除ポリシー）
+    await supabase.from('koujitei_pending_users').delete().eq('email', email)
 
     router.push(pending!.role === 'admin' ? '/admin' : '/member')
     router.refresh()
