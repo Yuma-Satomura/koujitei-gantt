@@ -134,14 +134,20 @@ export default function GanttChart({
 
         if (deleteIds.size === 0 && updateOps.length === 0) return prev
 
-        // バックグラウンドでDB操作
-        Promise.all([
-          ...[...deleteIds].map(id => supabase.from('koujitei_periods').delete().eq('id', id)),
-          ...updateOps.map(op => supabase.from('koujitei_periods').update(
-            Object.fromEntries(Object.entries(op).filter(([k]) => k !== 'id'))
-          ).eq('id', op.id)),
-          ...insertOps.map(op => supabase.from('koujitei_periods').insert(op)),
-        ]).then(() => onDataChange?.())
+        // UPDATE ポリシーがないため DELETE + INSERT で代替
+        const allDeleteIds = new Set([...deleteIds, ...updateOps.map(op => op.id)])
+        const allInserts = [
+          ...updateOps.map(op => {
+            const orig = prev.flatMap(g => g.rows.flatMap(r => r.periods)).find(p => p.id === op.id)!
+            return { assignment_id: orig.assignment_id, start_date: op.start_date ?? orig.start_date, end_date: op.end_date ?? orig.end_date, sort_order: orig.sort_order }
+          }),
+          ...insertOps,
+        ]
+
+        // バックグラウンドでDB操作（削除してから再挿入）
+        Promise.all([...allDeleteIds].map(id => supabase.from('koujitei_periods').delete().eq('id', id)))
+          .then(() => Promise.all(allInserts.map(op => supabase.from('koujitei_periods').insert(op))))
+          .then(() => onDataChange?.())
 
         // 楽観的ローカル更新
         return prev.map(g => ({
