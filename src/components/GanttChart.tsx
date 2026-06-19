@@ -47,6 +47,7 @@ export default function GanttChart({
   const [selecting, setSelecting] = useState<{
     assignmentId: string
     startWeek: number
+    mode: 'create' | 'delete'
   } | null>(null)
   const [hoverWeek, setHoverWeek] = useState<number | null>(null)
 
@@ -71,27 +72,44 @@ export default function GanttChart({
   }, [weekRange])
 
   // セルクリック (担当者用)
-  const handleCellClick = useCallback(async (assignmentId: string, weekIdx: number) => {
+  // hasPeriod: クリックしたセルにバーがあるか
+  const handleCellClick = useCallback(async (assignmentId: string, weekIdx: number, hasPeriod: boolean) => {
     if (isAdmin) return
 
     if (!selecting || selecting.assignmentId !== assignmentId) {
-      setSelecting({ assignmentId, startWeek: weekIdx })
+      setSelecting({ assignmentId, startWeek: weekIdx, mode: hasPeriod ? 'delete' : 'create' })
       return
     }
 
     const start = Math.min(selecting.startWeek, weekIdx)
     const end = Math.max(selecting.startWeek, weekIdx)
-    const startDate = toISODate(weekIndexToDate(start, fiscalYear))
-    const endDate = toISODate(weekIndexToEndDate(end, fiscalYear))
 
-    const { error } = await supabase.from('koujitei_periods').insert({
-      assignment_id: assignmentId,
-      start_date: startDate,
-      end_date: endDate,
-      sort_order: 1,
-    })
+    if (selecting.mode === 'delete') {
+      const { data: periods } = await supabase
+        .from('koujitei_periods')
+        .select('id, start_date, end_date')
+        .eq('assignment_id', assignmentId)
+      const toDelete = (periods ?? []).filter(p => {
+        const ps = dateToWeekIndex(p.start_date, fiscalYear)
+        const pe = dateToWeekIndex(p.end_date, fiscalYear)
+        return ps <= end && pe >= start
+      })
+      for (const p of toDelete) {
+        await supabase.from('koujitei_periods').delete().eq('id', p.id)
+      }
+      if (toDelete.length > 0) onDataChange?.()
+    } else {
+      const startDate = toISODate(weekIndexToDate(start, fiscalYear))
+      const endDate = toISODate(weekIndexToEndDate(end, fiscalYear))
+      const { error } = await supabase.from('koujitei_periods').insert({
+        assignment_id: assignmentId,
+        start_date: startDate,
+        end_date: endDate,
+        sort_order: 1,
+      })
+      if (!error) onDataChange?.()
+    }
 
-    if (!error) onDataChange?.()
     setSelecting(null)
     setHoverWeek(null)
   }, [selecting, isAdmin, fiscalYear, supabase, onDataChange])
@@ -349,6 +367,7 @@ export default function GanttChart({
                       return w >= s && w <= e
                     })
                     const isSelecting = selecting?.assignmentId === row.assignment.id
+                    const isDeleteMode = isSelecting && selecting!.mode === 'delete'
                     const isHovered = isSelecting && hoverWeek !== null && w >= Math.min(selecting!.startWeek, hoverWeek) && w <= Math.max(selecting!.startWeek, hoverWeek)
                     const isStart = selecting?.assignmentId === row.assignment.id && selecting.startWeek === w
 
@@ -358,11 +377,13 @@ export default function GanttChart({
                         className="gantt-cell"
                         onMouseEnter={() => isSelecting && setHoverWeek(w)}
                         onMouseLeave={() => isSelecting && setHoverWeek(null)}
-                        onClick={() => !isAdmin && handleCellClick(row.assignment.id, w)}
+                        onClick={() => !isAdmin && handleCellClick(row.assignment.id, w, coveredPeriods.length > 0)}
                         style={{
                           cursor: isAdmin ? 'default' : 'pointer',
                           border: '1px solid #f8f9fa',
-                          background: isStart ? 'rgba(74,127,255,0.15)' : undefined,
+                          background: isStart
+                            ? (isDeleteMode ? 'rgba(231,76,60,0.15)' : 'rgba(74,127,255,0.15)')
+                            : undefined,
                           position: 'relative',
                         }}
                       >
@@ -379,20 +400,16 @@ export default function GanttChart({
                               style={{
                                 left: isBarStart ? 2 : 0,
                                 right: isBarEnd ? 2 : 0,
-                                background: group.member.color,
+                                background: isDeleteMode && isHovered ? 'rgba(231,76,60,0.6)' : group.member.color,
                                 borderRadius: `${isBarStart ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarStart ? 3 : 0}px`,
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}`}
-                              onDoubleClick={e => {
-                                e.stopPropagation()
-                                if (!isAdmin) handleDeletePeriod(p.id)
-                              }}
                             />
                           )
                         })}
 
-                        {/* 選択プレビューバー */}
-                        {isHovered && coveredPeriods.length === 0 && (
+                        {/* 選択プレビューバー（作成モードのみ、空セル） */}
+                        {isHovered && !isDeleteMode && coveredPeriods.length === 0 && (
                           <div
                             className="gantt-bar"
                             style={{
