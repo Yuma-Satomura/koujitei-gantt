@@ -138,7 +138,7 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
         <GanttChart
           groups={sortedGroups}
           fiscalYear={fiscalYear}
-          isAdmin={true}
+          isAdmin={false}
           onDataChange={refresh}
           printRef={printRef}
         />
