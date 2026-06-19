@@ -1,6 +1,6 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@supabase/supabase-js'
 
 interface PendingResult {
   found: boolean
@@ -9,18 +9,20 @@ interface PendingResult {
   color?: string
 }
 
-// ログイン画面から呼ばれる。サービスロールキーで照合するため RLS をバイパス。
-// クライアントには found フラグと表示用情報のみ返す（メール一覧は返さない）。
+// SECURITY DEFINER 関数経由で照合（RLS をバイパス、サービスロールキー不要）
+// 自分のメールアドレスを知っている人が1件だけ確認できる設計。
 export async function checkPendingUser(email: string): Promise<PendingResult> {
   if (!email || !email.includes('@')) return { found: false }
 
-  const supabase = createAdminClient()
-  const { data } = await supabase
-    .from('koujitei_pending_users')
-    .select('name, role, color')
-    .eq('email', email.toLowerCase().trim())
-    .maybeSingle()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
-  if (!data) return { found: false }
-  return { found: true, name: data.name, role: data.role, color: data.color }
+  const { data } = await supabase
+    .rpc('check_koujitei_pending', { p_email: email })
+
+  if (!data || data.length === 0) return { found: false }
+  const row = data[0]
+  return { found: true, name: row.name, role: row.role, color: row.color }
 }
