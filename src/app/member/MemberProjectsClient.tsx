@@ -23,7 +23,7 @@ export default function MemberProjectsClient({ groups, fiscalYear, currentUser }
       >
         <h2 className="text-sm font-bold" style={{ color: '#1a1d23' }}>マイ案件</h2>
         <div className="text-xs ml-2" style={{ color: '#9ca3af' }}>
-          空セルをクリック→もう1度クリックで工程を登録 ／ バーをクリック→もう1度クリックで削除 ／ 出来高はダブルクリックで編集
+          空セルをクリック→もう1度クリックで工程を登録 ／ バーをクリック→もう1度クリックで削除 ／ 出来高はクリックで編集
         </div>
       </div>
 

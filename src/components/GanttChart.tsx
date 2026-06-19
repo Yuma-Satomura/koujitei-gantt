@@ -374,7 +374,7 @@ export default function GanttChart({
                       textAlign: 'center',
                       minWidth: 40,
                     }}
-                    onDoubleClick={() => !isAdmin && setEditingProgress({ assignmentId: row.assignment.id, value: String(row.assignment.progress) })}
+                    onClick={() => !isAdmin && setEditingProgress({ assignmentId: row.assignment.id, value: String(row.assignment.progress) })}
                   >
                     {editingProgress?.assignmentId === row.assignment.id ? (
                       <input
