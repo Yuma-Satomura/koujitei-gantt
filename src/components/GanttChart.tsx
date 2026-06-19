@@ -93,28 +93,68 @@ export default function GanttChart({
     setHoverWeek(null)
 
     if (mode === 'delete') {
-      // ローカルstateから対象期間を取得して即削除
       setLocalGroups(prev => {
-        const toDeleteIds = new Set<string>()
+        const deleteIds = new Set<string>()
+        const updateOps: { id: string; start_date?: string; end_date?: string }[] = []
+        const insertOps: Omit<Period, 'id' | 'created_at'>[] = []
+        const trimmedPeriods: Period[] = []
+
         prev.forEach(g => g.rows.forEach(r => {
           if (r.assignment.id !== assignmentId) return
           r.periods.forEach(p => {
             const ps = dateToWeekIndex(p.start_date, fiscalYear)
             const pe = dateToWeekIndex(p.end_date, fiscalYear)
-            if (ps <= end && pe >= start) toDeleteIds.add(p.id)
+            if (ps > end || pe < start) return // 重なりなし
+            const keepBefore = ps < start
+            const keepAfter  = pe > end
+            if (!keepBefore && !keepAfter) {
+              // 完全に範囲内 → 削除
+              deleteIds.add(p.id)
+            } else if (keepBefore && !keepAfter) {
+              // 前にはみ出し → 終端をトリム
+              const newEnd = toISODate(weekIndexToEndDate(start - 1, fiscalYear))
+              updateOps.push({ id: p.id, end_date: newEnd })
+              trimmedPeriods.push({ ...p, end_date: newEnd })
+            } else if (!keepBefore && keepAfter) {
+              // 後ろにはみ出し → 開始をトリム
+              const newStart = toISODate(weekIndexToDate(end + 1, fiscalYear))
+              updateOps.push({ id: p.id, start_date: newStart })
+              trimmedPeriods.push({ ...p, start_date: newStart })
+            } else {
+              // 両側にはみ出し → 分割
+              const newEnd   = toISODate(weekIndexToEndDate(start - 1, fiscalYear))
+              const newStart = toISODate(weekIndexToDate(end + 1, fiscalYear))
+              updateOps.push({ id: p.id, end_date: newEnd })
+              insertOps.push({ assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order })
+              trimmedPeriods.push({ ...p, end_date: newEnd })
+              trimmedPeriods.push({ id: 'tmp-' + Date.now(), assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order, created_at: '' })
+            }
           })
         }))
-        if (toDeleteIds.size === 0) return prev
-        // バックグラウンドでDB削除
-        Promise.all([...toDeleteIds].map(id =>
-          supabase.from('koujitei_periods').delete().eq('id', id)
-        )).then(() => onDataChange?.())
+
+        if (deleteIds.size === 0 && updateOps.length === 0) return prev
+
+        // バックグラウンドでDB操作
+        Promise.all([
+          ...[...deleteIds].map(id => supabase.from('koujitei_periods').delete().eq('id', id)),
+          ...updateOps.map(op => supabase.from('koujitei_periods').update(
+            Object.fromEntries(Object.entries(op).filter(([k]) => k !== 'id'))
+          ).eq('id', op.id)),
+          ...insertOps.map(op => supabase.from('koujitei_periods').insert(op)),
+        ]).then(() => onDataChange?.())
+
+        // 楽観的ローカル更新
         return prev.map(g => ({
           ...g,
-          rows: g.rows.map(r => r.assignment.id === assignmentId
-            ? { ...r, periods: r.periods.filter(p => !toDeleteIds.has(p.id)) }
-            : r
-          ),
+          rows: g.rows.map(r => {
+            if (r.assignment.id !== assignmentId) return r
+            const untouched = r.periods.filter(p => {
+              const ps = dateToWeekIndex(p.start_date, fiscalYear)
+              const pe = dateToWeekIndex(p.end_date, fiscalYear)
+              return ps > end || pe < start
+            })
+            return { ...r, periods: [...untouched, ...trimmedPeriods] }
+          }),
         }))
       })
     } else {
