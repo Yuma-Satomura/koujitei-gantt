@@ -22,7 +22,9 @@ export async function checkPendingUser(email: string): Promise<PendingResult> {
   const { data, error } = await supabase
     .rpc('check_koujitei_pending', { p_email: email })
 
-  console.log('[checkPendingUser]', JSON.stringify({ email, data, error }))
+  console.log('[CPU-email]', JSON.stringify(email))
+  console.log('[CPU-data]', JSON.stringify(data))
+  console.log('[CPU-error]', JSON.stringify(error))
 
   if (error || !data || data.length === 0) return { found: false }
   const row = data[0]
