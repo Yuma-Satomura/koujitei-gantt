@@ -11,7 +11,7 @@ export default async function AdminPage() {
 
   const [{ data: members }, { data: projects }, { data: assignments }, { data: periods }] =
     await Promise.all([
-      supabase.from('koujitei_users').select('*').eq('role', 'member').order('name'),
+      supabase.from('koujitei_users').select('*').order('name'),
       supabase.from('koujitei_projects').select('*').eq('fiscal_year', fiscalYear).order('created_at'),
       supabase.from('koujitei_assignments').select('*'),
       supabase.from('koujitei_periods').select('*'),
