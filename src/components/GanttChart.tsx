@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useCallback, useEffect } from 'react'
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import type { GanttGroup, Period, GanttRow } from '@/lib/types'
 import {
   dateToWeekIndex,
@@ -77,6 +77,21 @@ export default function GanttChart({
     x: number
     y: number
   } | null>(null)
+
+  // 鉛筆ボタン（fixed位置でヘッダーに隠れない）
+  const [pencilFloat, setPencilFloat] = useState<{
+    x: number; y: number; periodId: string; memo: string | null
+  } | null>(null)
+  const pencilHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function showPencilButton(e: React.MouseEvent, periodId: string, memo: string | null) {
+    if (pencilHideTimer.current) clearTimeout(pencilHideTimer.current)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setPencilFloat({ x: rect.left + rect.width / 2, y: rect.top, periodId, memo })
+  }
+  function hidePencilButton() {
+    pencilHideTimer.current = setTimeout(() => setPencilFloat(null), 150)
+  }
 
   const monthHeaders = useMemo(() => {
     return MONTH_HEADERS.filter(m => {
@@ -512,20 +527,9 @@ export default function GanttChart({
                                 borderRadius: `${isBarStart ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarStart ? 3 : 0}px`,
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}${p.memo ? '\n' + p.memo : ''}`}
-                            >
-                              {!showDeleteColor && !isAdmin && (
-                                <span
-                                  className="gantt-bar-edit"
-                                  onClick={e => {
-                                    e.stopPropagation()
-                                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                                    setMemoEditing({ periodId: p.id, value: p.memo ?? '', x: rect.left, y: rect.top })
-                                  }}
-                                >
-                                  ✎
-                                </span>
-                              )}
-                            </div>
+                              onMouseEnter={!isAdmin && !showDeleteColor ? e => showPencilButton(e, p.id, p.memo) : undefined}
+                              onMouseLeave={!isAdmin ? hidePencilButton : undefined}
+                            />
                           )
                         })}
                         {/* メモテキスト：opacityスタッキングコンテキストを回避するためtdの直接子として描画 */}
@@ -575,6 +579,39 @@ export default function GanttChart({
           ))}
         </tbody>
       </table>
+
+      {/* 鉛筆フローティングボタン（fixed: ヘッダーに隠れない） */}
+      {pencilFloat && !isAdmin && (
+        <div
+          onMouseEnter={() => pencilHideTimer.current && clearTimeout(pencilHideTimer.current)}
+          onMouseLeave={hidePencilButton}
+          onClick={e => {
+            e.stopPropagation()
+            setMemoEditing({ periodId: pencilFloat.periodId, value: pencilFloat.memo ?? '', x: pencilFloat.x, y: pencilFloat.y })
+            setPencilFloat(null)
+          }}
+          style={{
+            position: 'fixed',
+            left: pencilFloat.x - 11,
+            top: pencilFloat.y - 24,
+            width: 22,
+            height: 22,
+            background: '#4a7fff',
+            color: '#ffffff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 11,
+            cursor: 'pointer',
+            zIndex: 9999,
+            boxShadow: '0 2px 8px rgba(74,127,255,0.55)',
+            userSelect: 'none',
+          }}
+        >
+          ✎
+        </div>
+      )}
 
       {/* メモ編集ポップオーバー */}
       {memoEditing && (
