@@ -222,13 +222,25 @@ export default function GanttChart({
           : r
         ),
       })))
-      // バックグラウンドでDB保存（成否に関わらずrefreshでローカル状態を同期）
+      // バックグラウンドでDB保存。INSERT完了後に仮IDを本物IDへ差し替え、直後のメモ編集を可能にする
       supabase.from('koujitei_periods').insert({
         assignment_id: assignmentId,
         start_date: startDate,
         end_date: endDate,
         sort_order: 1,
-      }).then(() => onDataChange?.())
+      }).select('id').single()
+        .then(({ data }) => {
+          if (data?.id) {
+            setLocalGroups(prev => prev.map(g => ({
+              ...g,
+              rows: g.rows.map(r => ({
+                ...r,
+                periods: r.periods.map(p => p.id === tempId ? { ...p, id: data.id } : p),
+              })),
+            })))
+          }
+          onDataChange?.()
+        })
     }
   }, [selecting, isAdmin, fiscalYear, supabase, onDataChange])
 
