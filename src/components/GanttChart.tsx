@@ -513,7 +513,7 @@ export default function GanttChart({
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}${p.memo ? '\n' + p.memo : ''}`}
                             >
-                              {!showDeleteColor && !isAdmin && (
+                              {isBarEnd && !showDeleteColor && !isAdmin && (
                                 <span
                                   className="gantt-bar-edit"
                                   title="作業内容を編集"
