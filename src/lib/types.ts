@@ -38,6 +38,7 @@ export interface Period {
   start_date: string
   end_date: string
   sort_order: number
+  memo: string | null
   created_at: string
 }
 

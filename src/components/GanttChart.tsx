@@ -70,6 +70,14 @@ export default function GanttChart({
     value: string
   } | null>(null)
 
+  // メモ編集
+  const [memoEditing, setMemoEditing] = useState<{
+    periodId: string
+    value: string
+    x: number
+    y: number
+  } | null>(null)
+
   const monthHeaders = useMemo(() => {
     return MONTH_HEADERS.filter(m => {
       const mEnd = m.start + m.span - 1
@@ -131,9 +139,9 @@ export default function GanttChart({
               const newEnd   = toISODate(weekIndexToEndDate(start - 1, fiscalYear))
               const newStart = toISODate(weekIndexToDate(end + 1, fiscalYear))
               updateOps.push({ id: p.id, end_date: newEnd })
-              insertOps.push({ assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order })
+              insertOps.push({ assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order, memo: p.memo })
               trimmedPeriods.push({ ...p, end_date: newEnd })
-              trimmedPeriods.push({ id: 'tmp-' + Date.now(), assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order, created_at: '' })
+              trimmedPeriods.push({ id: 'tmp-' + Date.now(), assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order, memo: p.memo, created_at: '' })
             }
           })
         }))
@@ -145,7 +153,7 @@ export default function GanttChart({
         const allInserts = [
           ...updateOps.map(op => {
             const orig = prev.flatMap(g => g.rows.flatMap(r => r.periods)).find(p => p.id === op.id)!
-            return { assignment_id: orig.assignment_id, start_date: op.start_date ?? orig.start_date, end_date: op.end_date ?? orig.end_date, sort_order: orig.sort_order }
+            return { assignment_id: orig.assignment_id, start_date: op.start_date ?? orig.start_date, end_date: op.end_date ?? orig.end_date, sort_order: orig.sort_order, memo: orig.memo }
           }),
           ...insertOps,
         ]
@@ -177,7 +185,7 @@ export default function GanttChart({
       setLocalGroups(prev => prev.map(g => ({
         ...g,
         rows: g.rows.map(r => r.assignment.id === assignmentId
-          ? { ...r, periods: [...r.periods, { id: tempId, assignment_id: assignmentId, start_date: startDate, end_date: endDate, sort_order: 1, created_at: '' }] }
+          ? { ...r, periods: [...r.periods, { id: tempId, assignment_id: assignmentId, start_date: startDate, end_date: endDate, sort_order: 1, memo: null, created_at: '' }] }
           : r
         ),
       })))
@@ -217,6 +225,20 @@ export default function GanttChart({
       ),
     })))
     supabase.from('koujitei_assignments').update({ is_complete_this_month: next }).eq('id', assignmentId)
+      .then(() => onDataChange?.())
+  }, [supabase, onDataChange])
+
+  const handleMemoSave = useCallback((periodId: string, value: string) => {
+    setMemoEditing(null)
+    const memo = value.trim() || null
+    setLocalGroups(prev => prev.map(g => ({
+      ...g,
+      rows: g.rows.map(r => ({
+        ...r,
+        periods: r.periods.map(p => p.id === periodId ? { ...p, memo } : p),
+      })),
+    })))
+    supabase.from('koujitei_periods').update({ memo }).eq('id', periodId)
       .then(() => onDataChange?.())
   }, [supabase, onDataChange])
 
@@ -460,7 +482,7 @@ export default function GanttChart({
                         className="gantt-cell"
                         onMouseEnter={() => isSelecting && setHoverWeek(w)}
                         onMouseLeave={() => isSelecting && setHoverWeek(null)}
-                        onClick={() => !isAdmin && handleCellClick(row.assignment.id, w, coveredPeriods.length > 0)}
+                        onClick={() => !isAdmin && !memoEditing && handleCellClick(row.assignment.id, w, coveredPeriods.length > 0)}
                         style={{
                           cursor: isAdmin ? 'default' : (isDeleteMode ? 'crosshair' : 'pointer'),
                           border: isDeleteMode && isHovered ? '1px solid rgba(231,76,60,0.4)' : '1px solid #f8f9fa',
@@ -488,9 +510,32 @@ export default function GanttChart({
                                 background: showDeleteColor ? '#e74c3c' : group.member.color,
                                 opacity: showDeleteColor ? 0.75 : 0.85,
                                 borderRadius: `${isBarStart ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarStart ? 3 : 0}px`,
+                                overflow: 'visible',
                               }}
-                              title={`${p.start_date} 〜 ${p.end_date}`}
-                            />
+                              title={`${p.start_date} 〜 ${p.end_date}${p.memo ? '\n' + p.memo : ''}`}
+                              onDoubleClick={isAdmin ? undefined : e => {
+                                e.stopPropagation()
+                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                setMemoEditing({ periodId: p.id, value: p.memo ?? '', x: rect.left, y: rect.top })
+                              }}
+                            >
+                              {isBarStart && p.memo && !showDeleteColor && (
+                                <span style={{
+                                  position: 'absolute',
+                                  left: 4,
+                                  top: '50%',
+                                  transform: 'translateY(-50%)',
+                                  fontSize: 8,
+                                  color: 'rgba(255,255,255,0.95)',
+                                  whiteSpace: 'nowrap',
+                                  pointerEvents: 'none',
+                                  fontWeight: 500,
+                                  letterSpacing: 0,
+                                }}>
+                                  {p.memo}
+                                </span>
+                              )}
+                            </div>
                           )
                         })}
 
@@ -515,6 +560,50 @@ export default function GanttChart({
           ))}
         </tbody>
       </table>
+
+      {/* メモ編集ポップオーバー */}
+      {memoEditing && (
+        <div
+          style={{
+            position: 'fixed',
+            left: memoEditing.x,
+            top: memoEditing.y - 44,
+            zIndex: 200,
+            background: '#ffffff',
+            border: '1px solid #dde1e7',
+            borderRadius: 8,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            padding: '6px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <input
+            autoFocus
+            type="text"
+            value={memoEditing.value}
+            onChange={e => setMemoEditing(prev => prev ? { ...prev, value: e.target.value } : null)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleMemoSave(memoEditing.periodId, memoEditing.value)
+              if (e.key === 'Escape') setMemoEditing(null)
+            }}
+            onBlur={() => handleMemoSave(memoEditing.periodId, memoEditing.value)}
+            placeholder="作業内容を入力..."
+            style={{
+              outline: 'none',
+              border: '1px solid #4a7fff',
+              borderRadius: 4,
+              padding: '3px 8px',
+              fontSize: 12,
+              width: 180,
+              color: '#1a1d23',
+              background: '#f8f9fa',
+            }}
+          />
+          <span style={{ fontSize: 10, color: '#9ca3af', whiteSpace: 'nowrap' }}>Enter で保存</span>
+        </div>
+      )}
 
       {/* 詳細モーダル */}
       {detailRow && (
