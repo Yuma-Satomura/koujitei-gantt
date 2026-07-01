@@ -239,7 +239,7 @@ export default function GanttChart({
                 key={h}
                 rowSpan={2}
                 style={{
-                  padding: '6px 8px',
+                  padding: '4px 4px',
                   background: '#f8f9fa',
                   color: '#6b7280',
                   fontWeight: 600,
@@ -250,7 +250,7 @@ export default function GanttChart({
                   top: 0,
                   zIndex: 20,
                   textAlign: 'left',
-                  minWidth: h === '件名' ? 120 : h === '担当' ? 48 : h === '納入先' ? 64 : h === '請負額(K)' ? 56 : 40,
+                  minWidth: h === '件名' ? 88 : h === '担当' ? 36 : h === '納入先' ? 52 : h === '請負額(K)' ? 44 : h === '出来高' ? 34 : h === '今月完了' ? 34 : 30,
                 }}
               >
                 {h}
@@ -321,7 +321,7 @@ export default function GanttChart({
                     <td
                       rowSpan={group.rows.length}
                       style={{
-                        padding: '5px 8px',
+                        padding: '4px 5px',
                         background: '#ffffff',
                         color: '#1a1d23',
                         fontWeight: 700,
@@ -348,7 +348,7 @@ export default function GanttChart({
                   <FixedCell>{row.project.eigyo}</FixedCell>
                   <FixedCell>{row.project.gaichuu}</FixedCell>
                   <FixedCell>{row.project.kouban}</FixedCell>
-                  <FixedCell style={{ maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <FixedCell style={{ maxWidth: 52, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {row.project.client_name}
                   </FixedCell>
 
@@ -356,11 +356,11 @@ export default function GanttChart({
                   <td
                     onClick={() => setDetailRow(row)}
                     style={{
-                      padding: '5px 8px',
+                      padding: '4px 5px',
                       background: '#ffffff',
                       color: '#1a1d23',
                       borderRight: '1px solid #dde1e7',
-                      maxWidth: 120,
+                      maxWidth: 88,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       cursor: 'pointer',
@@ -373,12 +373,12 @@ export default function GanttChart({
                   {/* 出来高 */}
                   <td
                     style={{
-                      padding: '5px 4px',
+                      padding: '4px 2px',
                       background: '#ffffff',
                       color: '#1a1d23',
                       borderRight: '1px solid #dde1e7',
                       textAlign: 'center',
-                      minWidth: 40,
+                      minWidth: 34,
                     }}
                     onClick={() => !isAdmin && setEditingProgress({ assignmentId: row.assignment.id, value: String(row.assignment.progress) })}
                   >
@@ -413,7 +413,7 @@ export default function GanttChart({
                   {/* 今月完了 */}
                   <td
                     style={{
-                      padding: '5px 4px',
+                      padding: '4px 2px',
                       background: '#ffffff',
                       borderRight: '1px solid #dde1e7',
                       textAlign: 'center',
@@ -438,7 +438,7 @@ export default function GanttChart({
                   </FixedCell>
 
                   {/* 施工地 */}
-                  <FixedCell style={{ fontSize: 10, maxWidth: 56, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <FixedCell style={{ fontSize: 10, maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {row.project.location}
                   </FixedCell>
 
@@ -528,7 +528,7 @@ function FixedCell({ children, style }: { children?: React.ReactNode; style?: Re
   return (
     <td
       style={{
-        padding: '5px 8px',
+        padding: '4px 5px',
         background: '#ffffff',
         color: '#1a1d23',
         borderRight: '1px solid #dde1e7',
