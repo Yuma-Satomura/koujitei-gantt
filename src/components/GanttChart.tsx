@@ -51,7 +51,23 @@ export default function GanttChart({
 
   // 楽観的UI用ローカルstate（サーバーrefresh前に即時反映）
   const [localGroups, setLocalGroups] = useState(groups)
-  useEffect(() => { setLocalGroups(groups) }, [groups])
+  // DB保存が完了していないメモを保持（router.refresh()で上書きされないよう保護）
+  const dirtyMemos = useRef(new Map<string, string | null>())
+  useEffect(() => {
+    setLocalGroups(prev => {
+      const dirty = dirtyMemos.current
+      if (dirty.size === 0) return groups
+      return groups.map(g => ({
+        ...g,
+        rows: g.rows.map(r => ({
+          ...r,
+          periods: r.periods.map(p =>
+            dirty.has(p.id) ? { ...p, memo: dirty.get(p.id) as string | null } : p
+          ),
+        })),
+      }))
+    })
+  }, [groups])
 
   // クリック入力ステート (担当者のみ)
   const [selecting, setSelecting] = useState<{
@@ -246,6 +262,7 @@ export default function GanttChart({
   const handleMemoSave = useCallback((periodId: string, value: string) => {
     setMemoEditing(null)
     const memo = value.trim() || null
+    dirtyMemos.current.set(periodId, memo)
     setLocalGroups(prev => prev.map(g => ({
       ...g,
       rows: g.rows.map(r => ({
@@ -253,9 +270,8 @@ export default function GanttChart({
         periods: r.periods.map(p => p.id === periodId ? { ...p, memo } : p),
       })),
     })))
-    // onDataChange は呼ばない：router.refresh()でサーバーから古いデータが返り
-    // 楽観的更新を上書きしてしまうため、DB書き込みのみ行う
     supabase.from('koujitei_periods').update({ memo }).eq('id', periodId)
+      .then(() => { dirtyMemos.current.delete(periodId) })
   }, [supabase])
 
   return (
