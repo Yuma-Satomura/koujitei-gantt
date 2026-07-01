@@ -662,10 +662,13 @@ export default function GanttChart({
             value={memoEditing.value}
             onChange={e => setMemoEditing(prev => prev ? { ...prev, value: e.target.value } : null)}
             onKeyDown={e => {
-              if (e.key === 'Enter') handleMemoSave(memoEditing.periodId, memoEditing.value)
+              // IME変換中のEnterは無視（日本語確定と保存を区別）
+              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                handleMemoSave(memoEditing.periodId, e.currentTarget.value)
+              }
               if (e.key === 'Escape') setMemoEditing(null)
             }}
-            onBlur={() => handleMemoSave(memoEditing.periodId, memoEditing.value)}
+            onBlur={e => handleMemoSave(memoEditing.periodId, e.currentTarget.value)}
             placeholder="作業内容を入力..."
             style={{
               outline: 'none',
