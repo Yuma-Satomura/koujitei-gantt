@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import GanttChart from '@/components/GanttChart'
 import ProjectModal from '@/components/ProjectModal'
 import AssignModal from '@/components/AssignModal'
 import type { GanttGroup, Project, KoujiteiUser, Assignment, SortKey } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   initialGroups: GanttGroup[]
@@ -16,13 +15,52 @@ interface Props {
   assignments: Assignment[]
 }
 
+const MONTHS = ['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月']
+const ROWS_PER_PAGE = 20
+
+function splitGroupsIntoPages(groups: GanttGroup[], rowsPerPage: number): GanttGroup[][] {
+  const pages: GanttGroup[][] = []
+  let currentPage: GanttGroup[] = []
+  let currentCount = 0
+
+  for (const group of groups) {
+    let rowsLeft = [...group.rows]
+    while (rowsLeft.length > 0) {
+      const available = rowsPerPage - currentCount
+      const chunk = rowsLeft.slice(0, available)
+      rowsLeft = rowsLeft.slice(available)
+      currentPage.push({ ...group, rows: chunk })
+      currentCount += chunk.length
+      if (currentCount >= rowsPerPage) {
+        pages.push(currentPage)
+        currentPage = []
+        currentCount = 0
+      }
+    }
+  }
+
+  if (currentPage.length > 0) pages.push(currentPage)
+  return pages
+}
+
 export default function AdminGanttPage({ initialGroups, fiscalYear, members, projects, assignments }: Props) {
   const router = useRouter()
   const printRef = useRef<HTMLDivElement>(null)
+  const printPageRef = useRef<HTMLDivElement>(null)
+  const pdfRef = useRef<any>(null)
+
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('member')
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [assignTarget, setAssignTarget] = useState<Project | null>(null)
+  const [printFrom, setPrintFrom] = useState(0)
+  const [printTo, setPrintTo] = useState(5)
+  const [printJob, setPrintJob] = useState<{
+    weekRange: { start: number; end: number }
+    label: string
+    pages: GanttGroup[][]
+    currentPage: number
+  } | null>(null)
 
   const refresh = useCallback(() => router.refresh(), [router])
 
@@ -50,21 +88,50 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
     return String(aVal).localeCompare(String(bVal), 'ja')
   })
 
-  async function handlePDF(half: 'first' | 'second') {
-    const { default: jsPDF } = await import('jspdf')
-    const { default: html2canvas } = await import('html2canvas')
-    if (!printRef.current) return
+  // ページ順にキャプチャして PDF を生成
+  useEffect(() => {
+    if (!printJob || !printPageRef.current) return
+    const el = printPageRef.current
 
-    const canvas = await html2canvas(printRef.current, { scale: 1.5, useCORS: true })
-    const imgData = canvas.toDataURL('image/png')
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' })
-    const pageW = pdf.internal.pageSize.getWidth()
-    const pageH = pdf.internal.pageSize.getHeight()
-    const imgW = canvas.width
-    const imgH = canvas.height
-    const ratio = Math.min((pageW - 20) / imgW, (pageH - 20) / imgH)
-    pdf.addImage(imgData, 'PNG', 10, 10, imgW * ratio, imgH * ratio)
-    pdf.save(`工程表_${half === 'first' ? '前半' : '後半'}_${fiscalYear}.pdf`)
+    const timer = setTimeout(async () => {
+      const { default: html2canvas } = await import('html2canvas')
+      const canvas = await html2canvas(el, { scale: 1.5, useCORS: true })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = pdfRef.current
+      if (!pdf) return
+
+      if (printJob.currentPage > 0) pdf.addPage()
+      const pageW = pdf.internal.pageSize.getWidth()
+      const pageH = pdf.internal.pageSize.getHeight()
+      const ratio = Math.min((pageW - 20) / canvas.width, (pageH - 20) / canvas.height)
+      pdf.addImage(imgData, 'PNG', 10, 10, canvas.width * ratio, canvas.height * ratio)
+
+      if (printJob.currentPage < printJob.pages.length - 1) {
+        setPrintJob(prev => prev ? { ...prev, currentPage: prev.currentPage + 1 } : null)
+      } else {
+        pdf.save(`工程表_${printJob.label}_${fiscalYear}.pdf`)
+        pdfRef.current = null
+        setPrintJob(null)
+      }
+    }, 200)
+
+    return () => clearTimeout(timer)
+  }, [printJob, fiscalYear])
+
+  async function handlePDF() {
+    const pages = splitGroupsIntoPages(sortedGroups, ROWS_PER_PAGE)
+    if (pages.length === 0) return
+    const from = Math.min(printFrom, printTo)
+    const to = Math.max(printFrom, printTo)
+    const label = from === to ? MONTHS[from] : `${MONTHS[from]}〜${MONTHS[to]}`
+    const { default: jsPDF } = await import('jspdf')
+    pdfRef.current = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' })
+    setPrintJob({
+      weekRange: { start: from * 4, end: to * 4 + 3 },
+      label,
+      pages,
+      currentPage: 0,
+    })
   }
 
   const SORT_KEYS: { key: SortKey; label: string }[] = [
@@ -117,19 +184,39 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
           ＋ 案件追加
         </button>
 
+        {/* 月範囲選択 + PDF出力 */}
+        <select
+          value={printFrom}
+          onChange={e => setPrintFrom(Number(e.target.value))}
+          disabled={!!printJob}
+          className="rounded-lg px-2 py-1.5 text-xs outline-none"
+          style={{ background: '#f8f9fa', border: '1px solid #dde1e7', color: '#1a1d23' }}
+        >
+          {MONTHS.map((m, i) => (
+            <option key={i} value={i}>{m}</option>
+          ))}
+        </select>
+        <span className="text-xs" style={{ color: '#9ca3af' }}>〜</span>
+        <select
+          value={printTo}
+          onChange={e => setPrintTo(Number(e.target.value))}
+          disabled={!!printJob}
+          className="rounded-lg px-2 py-1.5 text-xs outline-none"
+          style={{ background: '#f8f9fa', border: '1px solid #dde1e7', color: '#1a1d23' }}
+        >
+          {MONTHS.map((m, i) => (
+            <option key={i} value={i}>{m}</option>
+          ))}
+        </select>
         <button
-          onClick={() => handlePDF('first')}
-          className="px-3 py-1.5 rounded-lg text-xs"
+          onClick={handlePDF}
+          disabled={!!printJob}
+          className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-50"
           style={{ background: '#f8f9fa', color: '#6b7280', border: '1px solid #dde1e7' }}
         >
-          PDF 前半
-        </button>
-        <button
-          onClick={() => handlePDF('second')}
-          className="px-3 py-1.5 rounded-lg text-xs"
-          style={{ background: '#f8f9fa', color: '#6b7280', border: '1px solid #dde1e7' }}
-        >
-          PDF 後半
+          {printJob
+            ? `PDF生成中 ${printJob.currentPage + 1}/${printJob.pages.length}枚目...`
+            : 'PDF出力'}
         </button>
       </div>
 
@@ -143,6 +230,23 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
           printRef={printRef}
         />
       </div>
+
+      {/* 印刷用隠しチャート（ページごとに順次キャプチャ） */}
+      {printJob && (
+        <div
+          aria-hidden="true"
+          style={{ position: 'fixed', left: '-9999px', top: 0, width: 1587, overflow: 'visible' }}
+        >
+          <div ref={printPageRef}>
+            <GanttChart
+              groups={printJob.pages[printJob.currentPage]}
+              fiscalYear={fiscalYear}
+              isAdmin={true}
+              weekRangeOverride={printJob.weekRange}
+            />
+          </div>
+        </div>
+      )}
 
       {/* 案件追加モーダル */}
       {showProjectModal && (

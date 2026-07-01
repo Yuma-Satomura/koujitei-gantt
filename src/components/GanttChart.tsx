@@ -22,10 +22,14 @@ interface GanttChartProps {
   onDataChange?: () => void
   printRef?: React.RefObject<HTMLDivElement | null>
   halfYear?: 'first' | 'second'
+  monthIndex?: number
+  weekRangeOverride?: { start: number; end: number } // 印刷用：任意の週範囲
 }
 
-// 週インデックス範囲：前半(0-23) / 後半(24-47)
-function getWeekRange(half?: 'first' | 'second') {
+// 週インデックス範囲
+function getWeekRange(half?: 'first' | 'second', monthIndex?: number, weekRangeOverride?: { start: number; end: number }) {
+  if (weekRangeOverride) return weekRangeOverride
+  if (monthIndex !== undefined) return { start: monthIndex * 4, end: monthIndex * 4 + 3 }
   if (half === 'first') return { start: 0, end: 23 }
   if (half === 'second') return { start: 24, end: 47 }
   return { start: 0, end: 47 }
@@ -38,9 +42,11 @@ export default function GanttChart({
   onDataChange,
   printRef,
   halfYear,
+  monthIndex,
+  weekRangeOverride,
 }: GanttChartProps) {
   const supabase = createClient()
-  const weekRange = getWeekRange(halfYear)
+  const weekRange = getWeekRange(halfYear, monthIndex, weekRangeOverride)
   const weeks = Array.from({ length: weekRange.end - weekRange.start + 1 }, (_, i) => i + weekRange.start)
 
   // 楽観的UI用ローカルstate（サーバーrefresh前に即時反映）
