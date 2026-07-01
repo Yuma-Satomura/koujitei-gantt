@@ -510,55 +510,59 @@ export default function GanttChart({
                                 background: showDeleteColor ? '#e74c3c' : group.member.color,
                                 opacity: showDeleteColor ? 0.75 : 0.85,
                                 borderRadius: `${isBarStart ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarStart ? 3 : 0}px`,
-                                overflow: 'visible',
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}${p.memo ? '\n' + p.memo : ''}`}
                             >
-                              {!showDeleteColor && (
-                                <>
-                                  {isBarStart && p.memo && (
-                                    <span style={{
-                                      position: 'absolute',
-                                      left: 4,
-                                      top: '50%',
-                                      transform: 'translateY(-50%)',
-                                      fontSize: 8,
-                                      color: 'rgba(0,0,0,0.85)',
-                                      whiteSpace: 'nowrap',
-                                      pointerEvents: 'none',
-                                      fontWeight: 600,
-                                      zIndex: 10,
-                                    }}>
-                                      {p.memo}
-                                    </span>
-                                  )}
-                                  {!isAdmin && (
-                                    <span
-                                      className="gantt-bar-edit"
-                                      title="作業内容を編集"
-                                      onClick={e => {
-                                        e.stopPropagation()
-                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                                        setMemoEditing({ periodId: p.id, value: p.memo ?? '', x: rect.left, y: rect.top })
-                                      }}
-                                      style={{
-                                        position: 'absolute',
-                                        right: 2,
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        fontSize: 9,
-                                        color: 'rgba(0,0,0,0.7)',
-                                        cursor: 'pointer',
-                                        lineHeight: 1,
-                                        padding: '1px 2px',
-                                      }}
-                                    >
-                                      ✎
-                                    </span>
-                                  )}
-                                </>
+                              {!showDeleteColor && !isAdmin && (
+                                <span
+                                  className="gantt-bar-edit"
+                                  title="作業内容を編集"
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                    setMemoEditing({ periodId: p.id, value: p.memo ?? '', x: rect.left, y: rect.top })
+                                  }}
+                                  style={{
+                                    position: 'absolute',
+                                    right: 2,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    fontSize: 9,
+                                    color: 'rgba(0,0,0,0.7)',
+                                    cursor: 'pointer',
+                                    lineHeight: 1,
+                                    padding: '1px 2px',
+                                  }}
+                                >
+                                  ✎
+                                </span>
                               )}
                             </div>
+                          )
+                        })}
+                        {/* メモテキスト：opacityスタッキングコンテキストを回避するためtdの直接子として描画 */}
+                        {coveredPeriods.map(p => {
+                          const s = dateToWeekIndex(p.start_date, fiscalYear)
+                          const showDeleteColor = isDeleteMode && (isStart || isHovered)
+                          if (w !== s || !p.memo || showDeleteColor) return null
+                          return (
+                            <span
+                              key={`memo-${p.id}`}
+                              style={{
+                                position: 'absolute',
+                                left: 6,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                fontSize: 8,
+                                color: 'rgba(0,0,0,0.85)',
+                                whiteSpace: 'nowrap',
+                                pointerEvents: 'none',
+                                fontWeight: 600,
+                                zIndex: 5,
+                              }}
+                            >
+                              {p.memo}
+                            </span>
                           )
                         })}
 
