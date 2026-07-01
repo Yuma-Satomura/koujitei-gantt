@@ -261,21 +261,17 @@ export default function GanttChart({
       .then(() => onDataChange?.())
   }, [supabase, onDataChange])
 
-  const handleMemoSave = useCallback((periodId: string, value: string, source: string) => {
-    console.log('[memo] handleMemoSave', { source, periodId, value })
+  const handleMemoSave = useCallback((periodId: string, value: string) => {
     setMemoEditing(null)
     const memo = value.trim() || null
     dirtyMemos.current.set(periodId, memo)
-    setLocalGroups(prev => {
-      console.log('[memo] setLocalGroups: setting memo=', memo, 'for', periodId)
-      return prev.map(g => ({
-        ...g,
-        rows: g.rows.map(r => ({
-          ...r,
-          periods: r.periods.map(p => p.id === periodId ? { ...p, memo } : p),
-        })),
-      }))
-    })
+    setLocalGroups(prev => prev.map(g => ({
+      ...g,
+      rows: g.rows.map(r => ({
+        ...r,
+        periods: r.periods.map(p => p.id === periodId ? { ...p, memo } : p),
+      })),
+    })))
     supabase.from('koujitei_periods').update({ memo }).eq('id', periodId)
       .then(() => { dirtyMemos.current.delete(periodId) })
   }, [supabase])
@@ -523,7 +519,8 @@ export default function GanttChart({
                           if (!isAdmin && !memoEditing && coveredPeriods.length > 0) {
                             const p = coveredPeriods[0]
                             const showDeleteColor = (isSelecting && selecting!.mode === 'delete') && (selecting?.startWeek === w || (hoverWeek !== null && w >= Math.min(selecting!.startWeek, hoverWeek) && w <= Math.max(selecting!.startWeek, hoverWeek)))
-                            if (!showDeleteColor) showPencilButton(e.currentTarget, p.id, p.memo)
+                            // 仮ID（DBに未保存）のバーにはメモ編集を許可しない
+                            if (!showDeleteColor && !p.id.startsWith('tmp-')) showPencilButton(e.currentTarget, p.id, p.memo)
                           }
                         }}
                         onMouseLeave={() => {
@@ -668,11 +665,10 @@ export default function GanttChart({
             value={memoEditing.value}
             onChange={e => setMemoEditing(prev => prev ? { ...prev, value: e.target.value } : null)}
             onKeyDown={e => {
-              console.log('[memo] onKeyDown', e.key, 'isComposing=', e.nativeEvent.isComposing, 'value=', e.currentTarget.value)
               // IME変換中のEnterは無視（日本語確定と保存を区別）
               if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                 preventNextBlurSave.current = true
-                handleMemoSave(memoEditing.periodId, e.currentTarget.value, 'keydown-enter')
+                handleMemoSave(memoEditing.periodId, e.currentTarget.value)
               }
               if (e.key === 'Escape') {
                 preventNextBlurSave.current = true
@@ -680,12 +676,11 @@ export default function GanttChart({
               }
             }}
             onBlur={e => {
-              console.log('[memo] onBlur', 'preventFlag=', preventNextBlurSave.current, 'value=', e.currentTarget.value)
               if (preventNextBlurSave.current) {
                 preventNextBlurSave.current = false
                 return
               }
-              handleMemoSave(memoEditing.periodId, e.currentTarget.value, 'blur')
+              handleMemoSave(memoEditing.periodId, e.currentTarget.value)
             }}
             placeholder="作業内容を入力..."
             style={{
