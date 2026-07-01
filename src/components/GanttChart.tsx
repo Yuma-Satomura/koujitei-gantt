@@ -498,7 +498,7 @@ export default function GanttChart({
                         className="gantt-cell"
                         onMouseEnter={e => {
                           if (isSelecting) setHoverWeek(w)
-                          if (!isAdmin && coveredPeriods.length > 0) {
+                          if (!isAdmin && !memoEditing && coveredPeriods.length > 0) {
                             const p = coveredPeriods[0]
                             const showDeleteColor = (isSelecting && selecting!.mode === 'delete') && (selecting?.startWeek === w || (hoverWeek !== null && w >= Math.min(selecting!.startWeek, hoverWeek) && w <= Math.max(selecting!.startWeek, hoverWeek)))
                             if (!showDeleteColor) showPencilButton(e.currentTarget, p.id, p.memo)
@@ -590,7 +590,7 @@ export default function GanttChart({
       </table>
 
       {/* 鉛筆フローティングボタン（fixed: ヘッダーに隠れない） */}
-      {pencilFloat && !isAdmin && (
+      {pencilFloat && !isAdmin && !memoEditing && (
         <div
           onMouseEnter={() => pencilHideTimer.current && clearTimeout(pencilHideTimer.current)}
           onMouseLeave={hidePencilButton}
