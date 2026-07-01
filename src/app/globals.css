@@ -41,6 +41,15 @@ body {
   opacity: 1;
 }
 
+.gantt-bar-edit {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.gantt-bar:hover .gantt-bar-edit {
+  opacity: 1;
+}
+
 /* スクロールバーを細く */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg3); }

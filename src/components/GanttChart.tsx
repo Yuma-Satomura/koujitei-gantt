@@ -513,27 +513,49 @@ export default function GanttChart({
                                 overflow: 'visible',
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}${p.memo ? '\n' + p.memo : ''}`}
-                              onDoubleClick={isAdmin ? undefined : e => {
-                                e.stopPropagation()
-                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                                setMemoEditing({ periodId: p.id, value: p.memo ?? '', x: rect.left, y: rect.top })
-                              }}
                             >
-                              {isBarStart && p.memo && !showDeleteColor && (
-                                <span style={{
-                                  position: 'absolute',
-                                  left: 4,
-                                  top: '50%',
-                                  transform: 'translateY(-50%)',
-                                  fontSize: 8,
-                                  color: 'rgba(255,255,255,0.95)',
-                                  whiteSpace: 'nowrap',
-                                  pointerEvents: 'none',
-                                  fontWeight: 500,
-                                  letterSpacing: 0,
-                                }}>
-                                  {p.memo}
-                                </span>
+                              {isBarStart && !showDeleteColor && (
+                                <>
+                                  {p.memo && (
+                                    <span style={{
+                                      position: 'absolute',
+                                      left: 4,
+                                      top: '50%',
+                                      transform: 'translateY(-50%)',
+                                      fontSize: 8,
+                                      color: 'rgba(255,255,255,0.95)',
+                                      whiteSpace: 'nowrap',
+                                      pointerEvents: 'none',
+                                      fontWeight: 500,
+                                    }}>
+                                      {p.memo}
+                                    </span>
+                                  )}
+                                  {!isAdmin && (
+                                    <span
+                                      className="gantt-bar-edit"
+                                      title="作業内容を編集"
+                                      onClick={e => {
+                                        e.stopPropagation()
+                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                        setMemoEditing({ periodId: p.id, value: p.memo ?? '', x: rect.left, y: rect.top })
+                                      }}
+                                      style={{
+                                        position: 'absolute',
+                                        right: 2,
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        fontSize: 9,
+                                        color: 'rgba(255,255,255,0.85)',
+                                        cursor: 'pointer',
+                                        lineHeight: 1,
+                                        padding: '1px 2px',
+                                      }}
+                                    >
+                                      ✎
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </div>
                           )
