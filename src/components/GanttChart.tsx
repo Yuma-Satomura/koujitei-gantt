@@ -513,25 +513,13 @@ export default function GanttChart({
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}${p.memo ? '\n' + p.memo : ''}`}
                             >
-                              {isBarEnd && !showDeleteColor && !isAdmin && (
+                              {!showDeleteColor && !isAdmin && (
                                 <span
                                   className="gantt-bar-edit"
-                                  title="作業内容を編集"
                                   onClick={e => {
                                     e.stopPropagation()
                                     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                                     setMemoEditing({ periodId: p.id, value: p.memo ?? '', x: rect.left, y: rect.top })
-                                  }}
-                                  style={{
-                                    position: 'absolute',
-                                    right: 2,
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    fontSize: 9,
-                                    color: 'rgba(0,0,0,0.7)',
-                                    cursor: 'pointer',
-                                    lineHeight: 1,
-                                    padding: '1px 2px',
                                   }}
                                 >
                                   ✎
