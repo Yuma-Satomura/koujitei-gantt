@@ -53,6 +53,8 @@ export default function GanttChart({
   const [localGroups, setLocalGroups] = useState(groups)
   // DB保存が完了していないメモを保持（router.refresh()で上書きされないよう保護）
   const dirtyMemos = useRef(new Map<string, string | null>())
+  // Enterで保存後にblurが空値で再呼び出しされるのを防ぐ
+  const preventNextBlurSave = useRef(false)
   useEffect(() => {
     setLocalGroups(prev => {
       const dirty = dirtyMemos.current
@@ -664,11 +666,21 @@ export default function GanttChart({
             onKeyDown={e => {
               // IME変換中のEnterは無視（日本語確定と保存を区別）
               if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                preventNextBlurSave.current = true
                 handleMemoSave(memoEditing.periodId, e.currentTarget.value)
               }
-              if (e.key === 'Escape') setMemoEditing(null)
+              if (e.key === 'Escape') {
+                preventNextBlurSave.current = true
+                setMemoEditing(null)
+              }
             }}
-            onBlur={e => handleMemoSave(memoEditing.periodId, e.currentTarget.value)}
+            onBlur={e => {
+              if (preventNextBlurSave.current) {
+                preventNextBlurSave.current = false
+                return
+              }
+              handleMemoSave(memoEditing.periodId, e.currentTarget.value)
+            }}
             placeholder="作業内容を入力..."
             style={{
               outline: 'none',
