@@ -253,9 +253,10 @@ export default function GanttChart({
         periods: r.periods.map(p => p.id === periodId ? { ...p, memo } : p),
       })),
     })))
+    // onDataChange は呼ばない：router.refresh()でサーバーから古いデータが返り
+    // 楽観的更新を上書きしてしまうため、DB書き込みのみ行う
     supabase.from('koujitei_periods').update({ memo }).eq('id', periodId)
-      .then(() => onDataChange?.())
-  }, [supabase, onDataChange])
+  }, [supabase])
 
   return (
     <div ref={printRef} className="overflow-x-auto" style={{ background: '#f4f6f9' }}>
