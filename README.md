@@ -12,6 +12,7 @@
 | 全体ガントチャート閲覧 | ✓ | ✓（閲覧のみ） |
 | マイ案件一覧 | ✓ | ✓ |
 | 工程入力（クリック）| ✓ | ✓ |
+| 工程へのメモ入力 | ✓ | ✓ |
 | 出来高 (%) 更新 | ✓ | ✓ |
 | 今月完了フラグ | ✓ | ✓ |
 | ユーザー管理 | ✓ | — |
@@ -19,7 +20,7 @@
 
 ## 技術スタック
 
-- **フロントエンド / API**: Next.js 15 (App Router) + TypeScript
+- **フロントエンド / API**: Next.js 16 (App Router) + TypeScript
 - **データベース**: Supabase (PostgreSQL) + RLS
 - **認証**: Supabase Auth
 - **PDF 出力**: jsPDF + html2canvas
@@ -33,7 +34,8 @@
 - 担当者ごとに色分け表示
 - 1案件につき**複数工程**（飛び飛びの工期）対応
 - クリック操作: セルを1回目クリック → 開始週選択 → もう1回クリック → 工程を保存
-- バーをダブルクリックで工程を削除
+- バー上にカーソルを合わせると鉛筆ボタンが出現 → クリックでメモを入力できる
+- メモはバーの左端に表示（黒文字）
 
 ## セットアップ
 
@@ -58,7 +60,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### 3. Supabase にテーブルを作成
 
-`supabase/migrations/20260616_koujitei.sql` の内容を Supabase の SQL エディタで実行します。
+`supabase/migrations/` 内の SQL ファイルを Supabase の SQL エディタで順番に実行します。
+
+| ファイル | 内容 |
+|----------|------|
+| `20260616_koujitei.sql` | テーブル定義 + RLS ポリシー（初期） |
+| `20260616_koujitei_pending.sql` | 追加のポリシー |
+| `20260619_fix_rls_policies.sql` | RLS ポリシー修正 |
+| `20260701_add_period_memo.sql` | 工程メモ列の追加 |
 
 作成されるテーブル:
 
@@ -67,7 +76,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 | `koujitei_users` | 担当者マスタ（Supabase Auth と 1:1） |
 | `koujitei_projects` | 案件マスタ |
 | `koujitei_assignments` | 案件と担当者のアサイン |
-| `koujitei_periods` | 工程（作業期間）複数対応 |
+| `koujitei_periods` | 工程（作業期間）・メモ対応 |
 
 全テーブルに RLS を設定済みです。admin / member ロールで操作権限を制御しています。
 
@@ -118,7 +127,10 @@ src/
     └── supabase/        # Supabase クライアント（ブラウザ・サーバー）
 supabase/
 └── migrations/
-    └── 20260616_koujitei.sql  # テーブル定義 + RLS
+    ├── 20260616_koujitei.sql         # テーブル定義 + RLS
+    ├── 20260616_koujitei_pending.sql # 追加ポリシー
+    ├── 20260619_fix_rls_policies.sql # RLS修正
+    └── 20260701_add_period_memo.sql  # メモ列追加
 ```
 
 ## ライセンス
