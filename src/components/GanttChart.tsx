@@ -514,19 +514,20 @@ export default function GanttChart({
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}${p.memo ? '\n' + p.memo : ''}`}
                             >
-                              {isBarStart && !showDeleteColor && (
+                              {!showDeleteColor && (
                                 <>
-                                  {p.memo && (
+                                  {isBarStart && p.memo && (
                                     <span style={{
                                       position: 'absolute',
                                       left: 4,
                                       top: '50%',
                                       transform: 'translateY(-50%)',
                                       fontSize: 8,
-                                      color: 'rgba(255,255,255,0.95)',
+                                      color: 'rgba(0,0,0,0.85)',
                                       whiteSpace: 'nowrap',
                                       pointerEvents: 'none',
-                                      fontWeight: 500,
+                                      fontWeight: 600,
+                                      zIndex: 10,
                                     }}>
                                       {p.memo}
                                     </span>
@@ -546,7 +547,7 @@ export default function GanttChart({
                                         top: '50%',
                                         transform: 'translateY(-50%)',
                                         fontSize: 9,
-                                        color: 'rgba(255,255,255,0.85)',
+                                        color: 'rgba(0,0,0,0.7)',
                                         cursor: 'pointer',
                                         lineHeight: 1,
                                         padding: '1px 2px',
