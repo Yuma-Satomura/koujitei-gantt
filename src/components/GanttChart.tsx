@@ -84,10 +84,10 @@ export default function GanttChart({
   } | null>(null)
   const pencilHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function showPencilButton(e: React.MouseEvent, periodId: string, memo: string | null) {
+  function showPencilButton(el: HTMLElement, periodId: string, memo: string | null) {
     if (pencilHideTimer.current) clearTimeout(pencilHideTimer.current)
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    setPencilFloat({ x: rect.left + rect.width / 2, y: rect.top, periodId, memo })
+    const rect = el.getBoundingClientRect()
+    setPencilFloat({ x: rect.left + rect.width / 2, y: rect.top + 4, periodId, memo })
   }
   function hidePencilButton() {
     pencilHideTimer.current = setTimeout(() => setPencilFloat(null), 150)
@@ -495,8 +495,18 @@ export default function GanttChart({
                       <td
                         key={w}
                         className="gantt-cell"
-                        onMouseEnter={() => isSelecting && setHoverWeek(w)}
-                        onMouseLeave={() => isSelecting && setHoverWeek(null)}
+                        onMouseEnter={e => {
+                          if (isSelecting) setHoverWeek(w)
+                          if (!isAdmin && coveredPeriods.length > 0) {
+                            const p = coveredPeriods[0]
+                            const showDeleteColor = (isSelecting && selecting!.mode === 'delete') && (selecting?.startWeek === w || (hoverWeek !== null && w >= Math.min(selecting!.startWeek, hoverWeek) && w <= Math.max(selecting!.startWeek, hoverWeek)))
+                            if (!showDeleteColor) showPencilButton(e.currentTarget, p.id, p.memo)
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (isSelecting) setHoverWeek(null)
+                          if (!isAdmin && coveredPeriods.length > 0) hidePencilButton()
+                        }}
                         onClick={() => !isAdmin && !memoEditing && handleCellClick(row.assignment.id, w, coveredPeriods.length > 0)}
                         style={{
                           cursor: isAdmin ? 'default' : (isDeleteMode ? 'crosshair' : 'pointer'),
@@ -527,8 +537,6 @@ export default function GanttChart({
                                 borderRadius: `${isBarStart ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarEnd ? 3 : 0}px ${isBarStart ? 3 : 0}px`,
                               }}
                               title={`${p.start_date} 〜 ${p.end_date}${p.memo ? '\n' + p.memo : ''}`}
-                              onMouseEnter={!isAdmin && !showDeleteColor ? e => showPencilButton(e, p.id, p.memo) : undefined}
-                              onMouseLeave={!isAdmin ? hidePencilButton : undefined}
                             />
                           )
                         })}
