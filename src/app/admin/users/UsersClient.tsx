@@ -67,7 +67,8 @@ export default function UsersClient({ users, pendingUsers }: Props) {
   }
 
   async function handleDeletePending(id: string) {
-    await supabase.from('koujitei_pending_users').delete().eq('id', id)
+    const { error: delErr } = await supabase.from('koujitei_pending_users').delete().eq('id', id)
+    if (delErr) { setError(delErr.message); return }
     refresh()
   }
 
