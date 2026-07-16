@@ -1,12 +1,19 @@
 import { defineConfig } from 'vitest/config'
+import path from 'path'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   test: {
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    setupFiles: ['./src/test-setup.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/lib/**'],
+      include: ['src/lib/**', 'src/components/**'],
     },
   },
 })

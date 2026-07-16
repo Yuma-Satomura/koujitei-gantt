@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import type { GanttGroup, Period, GanttRow } from '@/lib/types'
+import { mergeGroupsWithOverrides } from '@/lib/gantt-merge'
 import {
   dateToWeekIndex,
   weekIndexToDate,
@@ -56,31 +57,7 @@ export default function GanttChart({
   // Enterで保存後にblurが空値で再呼び出しされるのを防ぐ
   const preventNextBlurSave = useRef(false)
   useEffect(() => {
-    setLocalGroups(prev => {
-      const dirty = dirtyMemos.current
-      // router.refresh()中もpendingバーを失わないようprevから退避
-      const pendingByAssignment = new Map<string, Period[]>()
-      prev.forEach(g => g.rows.forEach(r => {
-        const pending = r.periods.filter(p => p.pending)
-        if (pending.length > 0) pendingByAssignment.set(r.assignment.id, pending)
-      }))
-      const hasDirty = dirty.size > 0
-      const hasPending = pendingByAssignment.size > 0
-      if (!hasDirty && !hasPending) return groups
-      return groups.map(g => ({
-        ...g,
-        rows: g.rows.map(r => {
-          const pendingPeriods = pendingByAssignment.get(r.assignment.id) ?? []
-          return {
-            ...r,
-            periods: [
-              ...r.periods.map(p => dirty.has(p.id) ? { ...p, memo: dirty.get(p.id) as string | null } : p),
-              ...pendingPeriods,
-            ],
-          }
-        }),
-      }))
-    })
+    setLocalGroups(prev => mergeGroupsWithOverrides(groups, dirtyMemos.current, prev))
   }, [groups])
 
   // クリック入力ステート (担当者のみ)
