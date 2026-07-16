@@ -40,6 +40,7 @@ export interface Period {
   sort_order: number
   memo: string | null
   created_at: string
+  pending?: boolean // DBに未保存の楽観的バー（メモ編集・INSERT完了まで保護）
 }
 
 // 表示用の結合データ

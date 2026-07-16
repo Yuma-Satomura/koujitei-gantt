@@ -45,7 +45,7 @@ export default function GanttChart({
   monthIndex,
   weekRangeOverride,
 }: GanttChartProps) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const weekRange = getWeekRange(halfYear, monthIndex, weekRangeOverride)
   const weeks = Array.from({ length: weekRange.end - weekRange.start + 1 }, (_, i) => i + weekRange.start)
 
@@ -58,15 +58,27 @@ export default function GanttChart({
   useEffect(() => {
     setLocalGroups(prev => {
       const dirty = dirtyMemos.current
-      if (dirty.size === 0) return groups
+      // router.refresh()中もpendingバーを失わないようprevから退避
+      const pendingByAssignment = new Map<string, Period[]>()
+      prev.forEach(g => g.rows.forEach(r => {
+        const pending = r.periods.filter(p => p.pending)
+        if (pending.length > 0) pendingByAssignment.set(r.assignment.id, pending)
+      }))
+      const hasDirty = dirty.size > 0
+      const hasPending = pendingByAssignment.size > 0
+      if (!hasDirty && !hasPending) return groups
       return groups.map(g => ({
         ...g,
-        rows: g.rows.map(r => ({
-          ...r,
-          periods: r.periods.map(p =>
-            dirty.has(p.id) ? { ...p, memo: dirty.get(p.id) as string | null } : p
-          ),
-        })),
+        rows: g.rows.map(r => {
+          const pendingPeriods = pendingByAssignment.get(r.assignment.id) ?? []
+          return {
+            ...r,
+            periods: [
+              ...r.periods.map(p => dirty.has(p.id) ? { ...p, memo: dirty.get(p.id) as string | null } : p),
+              ...pendingPeriods,
+            ],
+          }
+        }),
       }))
     })
   }, [groups])
@@ -174,7 +186,7 @@ export default function GanttChart({
               updateOps.push({ id: p.id, end_date: newEnd })
               insertOps.push({ assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order, memo: p.memo })
               trimmedPeriods.push({ ...p, end_date: newEnd })
-              trimmedPeriods.push({ id: 'tmp-' + Date.now(), assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order, memo: p.memo, created_at: '' })
+              trimmedPeriods.push({ id: 'tmp-' + Date.now(), assignment_id: p.assignment_id, start_date: newStart, end_date: p.end_date, sort_order: p.sort_order, memo: p.memo, created_at: '', pending: true })
             }
           })
         }))
@@ -218,7 +230,7 @@ export default function GanttChart({
       setLocalGroups(prev => prev.map(g => ({
         ...g,
         rows: g.rows.map(r => r.assignment.id === assignmentId
-          ? { ...r, periods: [...r.periods, { id: tempId, assignment_id: assignmentId, start_date: startDate, end_date: endDate, sort_order: 1, memo: null, created_at: '' }] }
+          ? { ...r, periods: [...r.periods, { id: tempId, assignment_id: assignmentId, start_date: startDate, end_date: endDate, sort_order: 1, memo: null, created_at: '', pending: true }] }
           : r
         ),
       })))
@@ -229,13 +241,23 @@ export default function GanttChart({
         end_date: endDate,
         sort_order: 1,
       }).select('id').single()
-        .then(({ data }) => {
-          if (data?.id) {
+        .then(({ data, error }) => {
+          if (error || !data?.id) {
+            // INSERT失敗時は仮バーを取り消す
             setLocalGroups(prev => prev.map(g => ({
               ...g,
               rows: g.rows.map(r => ({
                 ...r,
-                periods: r.periods.map(p => p.id === tempId ? { ...p, id: data.id } : p),
+                periods: r.periods.filter(p => p.id !== tempId),
+              })),
+            })))
+          } else {
+            // 仮IDを本物IDに差し替えてpendingフラグを解除
+            setLocalGroups(prev => prev.map(g => ({
+              ...g,
+              rows: g.rows.map(r => ({
+                ...r,
+                periods: r.periods.map(p => p.id === tempId ? { ...p, id: data.id, pending: false } : p),
               })),
             })))
           }
@@ -285,8 +307,15 @@ export default function GanttChart({
       })),
     })))
     supabase.from('koujitei_periods').update({ memo }).eq('id', periodId)
-      .then(() => { dirtyMemos.current.delete(periodId) })
-  }, [supabase])
+      .then(({ error }) => {
+        if (!error) {
+          // 成功時のみ保護を解除してリフレッシュ（他クライアントの変更を反映）
+          dirtyMemos.current.delete(periodId)
+          onDataChange?.()
+        }
+        // エラー時はdirtyMemosを保持し続け、楽観的UIを維持する
+      })
+  }, [supabase, onDataChange])
 
   return (
     <div ref={printRef} className="overflow-x-auto" style={{ background: '#f4f6f9' }}>
@@ -531,8 +560,8 @@ export default function GanttChart({
                           if (!isAdmin && !memoEditing && coveredPeriods.length > 0) {
                             const p = coveredPeriods[0]
                             const showDeleteColor = (isSelecting && selecting!.mode === 'delete') && (selecting?.startWeek === w || (hoverWeek !== null && w >= Math.min(selecting!.startWeek, hoverWeek) && w <= Math.max(selecting!.startWeek, hoverWeek)))
-                            // 仮ID（DBに未保存）のバーにはメモ編集を許可しない
-                            if (!showDeleteColor && !p.id.startsWith('tmp-')) showPencilButton(e.currentTarget, p.id, p.memo)
+                            // pending（DBに未保存）のバーにはメモ編集を許可しない
+                            if (!showDeleteColor && !p.pending) showPencilButton(e.currentTarget, p.id, p.memo)
                           }
                         }}
                         onMouseLeave={() => {
@@ -627,6 +656,7 @@ export default function GanttChart({
           onMouseLeave={hidePencilButton}
           onClick={e => {
             e.stopPropagation()
+            preventNextBlurSave.current = false // Escape後に残ったフラグをリセット
             setMemoEditing({ periodId: pencilFloat.periodId, value: pencilFloat.memo ?? '', x: pencilFloat.x, y: pencilFloat.y })
             setPencilFloat(null)
           }}
