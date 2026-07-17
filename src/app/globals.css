@@ -23,14 +23,14 @@ body {
 /* ガントバー表示用 */
 .gantt-cell {
   position: relative;
-  height: 28px;
   min-width: 24px;
   width: 24px;
 }
 
 .gantt-bar {
   position: absolute;
-  top: 5px;
+  top: 50%;
+  transform: translateY(-50%);
   height: 18px;
   border-radius: 3px;
   opacity: 0.85;
