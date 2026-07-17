@@ -1,18 +1,9 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getKoujiteiUser } from '@/lib/supabase/server'
 import MemberNav from './MemberNav'
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: kUser } = await supabase
-    .from('koujitei_users')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
+  const kUser = await getKoujiteiUser()
   if (!kUser) redirect('/login')
 
   return (

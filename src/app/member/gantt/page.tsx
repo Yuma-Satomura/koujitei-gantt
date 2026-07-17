@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getKoujiteiUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getFiscalYear } from '@/lib/gantt'
 import type { GanttGroup } from '@/lib/types'
@@ -7,13 +7,10 @@ import GanttChart from '@/components/GanttChart'
 export const dynamic = 'force-dynamic'
 
 export default async function MemberGanttPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: kUser } = await supabase.from('koujitei_users').select('*').eq('id', user.id).single()
+  const kUser = await getKoujiteiUser()
   if (!kUser) redirect('/login')
 
+  const supabase = await createClient()
   const fiscalYear = getFiscalYear()
 
   const [{ data: members }, { data: projects }, { data: assignments }, { data: periods }] =

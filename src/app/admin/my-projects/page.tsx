@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getKoujiteiUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import MemberProjectsClient from '@/app/member/MemberProjectsClient'
 import { getFiscalYear } from '@/lib/gantt'
@@ -7,19 +7,16 @@ import type { GanttGroup } from '@/lib/types'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminMyProjectsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const kUser = await getKoujiteiUser()
+  if (!kUser) redirect('/login')
 
+  const supabase = await createClient()
   const fiscalYear = getFiscalYear()
 
-  const [{ data: kUser }, { data: assignments }, { data: periods }] = await Promise.all([
-    supabase.from('koujitei_users').select('*').eq('id', user.id).single(),
-    supabase.from('koujitei_assignments').select('*').eq('user_id', user.id),
+  const [{ data: assignments }, { data: periods }] = await Promise.all([
+    supabase.from('koujitei_assignments').select('*').eq('user_id', kUser.id),
     supabase.from('koujitei_periods').select('*'),
   ])
-
-  if (!kUser) redirect('/login')
 
   const projectIds = (assignments ?? []).map(a => a.project_id)
   const { data: projects } = projectIds.length > 0
