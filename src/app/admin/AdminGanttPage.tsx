@@ -51,6 +51,7 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
 
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('member')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [assignTarget, setAssignTarget] = useState<Project | null>(null)
   const [printFrom, setPrintFrom] = useState(0)
@@ -82,10 +83,16 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
 
   // ソート
   const sortedGroups = [...filteredGroups].sort((a, b) => {
-    if (sortKey === 'member') return a.member.name.localeCompare(b.member.name, 'ja')
-    const aVal = a.rows[0]?.project[sortKey === 'sekkei' ? 'sekkei' : sortKey === 'eigyo' ? 'eigyo' : 'kouban'] ?? ''
-    const bVal = b.rows[0]?.project[sortKey === 'sekkei' ? 'sekkei' : sortKey === 'eigyo' ? 'eigyo' : 'kouban'] ?? ''
-    return String(aVal).localeCompare(String(bVal), 'ja')
+    let cmp: number
+    if (sortKey === 'member') {
+      cmp = a.member.name.localeCompare(b.member.name, 'ja')
+    } else {
+      const field = sortKey === 'sekkei' ? 'sekkei' : sortKey === 'eigyo' ? 'eigyo' : 'kouban'
+      const aVal = a.rows[0]?.project[field] ?? ''
+      const bVal = b.rows[0]?.project[field] ?? ''
+      cmp = String(aVal).localeCompare(String(bVal), 'ja')
+    }
+    return sortDir === 'asc' ? cmp : -cmp
   })
 
   // ページ順にキャプチャして PDF を生成
@@ -158,20 +165,33 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
         />
 
         <div className="flex gap-1">
-          {SORT_KEYS.map(s => (
-            <button
-              key={s.key}
-              onClick={() => setSortKey(s.key)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
-              style={{
-                background: sortKey === s.key ? 'rgba(74,127,255,.15)' : '#f8f9fa',
-                color: sortKey === s.key ? '#4a7fff' : '#6b7280',
-                border: `1px solid ${sortKey === s.key ? 'rgba(74,127,255,.3)' : '#dde1e7'}`,
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
+          {SORT_KEYS.map(s => {
+            const active = sortKey === s.key
+            return (
+              <button
+                key={s.key}
+                onClick={() => {
+                  if (active) {
+                    setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+                  } else {
+                    setSortKey(s.key)
+                    setSortDir('asc')
+                  }
+                }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                style={{
+                  background: active ? 'rgba(74,127,255,.15)' : '#f8f9fa',
+                  color: active ? '#4a7fff' : '#6b7280',
+                  border: `1px solid ${active ? 'rgba(74,127,255,.3)' : '#dde1e7'}`,
+                }}
+              >
+                {s.label}
+                {active && (
+                  <span style={{ fontSize: 10 }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         <div className="flex-1" />
