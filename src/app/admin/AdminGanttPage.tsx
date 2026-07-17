@@ -156,8 +156,8 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
     <div className="flex flex-col h-full">
       {/* ツールバー */}
       <div
-        className="flex items-center gap-3 px-4 py-2.5 shrink-0 flex-wrap"
-        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7' }}
+        className="flex items-center gap-3 py-2.5 shrink-0 flex-wrap"
+        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7', paddingLeft: 56, paddingRight: 16 }}
       >
         <input
           type="text"

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -8,6 +9,7 @@ export default function AdminNav({ userName }: { userName: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [open, setOpen] = useState(false)
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -22,44 +24,116 @@ export default function AdminNav({ userName }: { userName: string }) {
   ]
 
   return (
-    <aside
-      className="flex flex-col w-52 shrink-0 h-full"
-      style={{ background: '#ffffff', borderRight: '1px solid #dde1e7' }}
-    >
-      <div className="p-5 border-b" style={{ borderColor: '#dde1e7' }}>
-        <div className="text-xs font-bold tracking-widest mb-0.5" style={{ color: '#4a7fff' }}>
-          ADMIN
-        </div>
-        <div className="text-sm font-bold" style={{ color: '#1a1d23' }}>工事部 工程表</div>
-        <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>{userName}</div>
-      </div>
+    <>
+      {/* ハンバーガーボタン（常に左上に固定） */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label={open ? 'メニューを閉じる' : 'メニューを開く'}
+        style={{
+          position: 'fixed',
+          top: 10,
+          left: 10,
+          zIndex: 300,
+          width: 36,
+          height: 36,
+          background: '#ffffff',
+          border: '1px solid #dde1e7',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          fontSize: 18,
+          color: '#6b7280',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+        }}
+      >
+        {open ? '✕' : '☰'}
+      </button>
 
-      <nav className="flex-1 p-3 space-y-0.5">
-        {links.map(link => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
+      {/* オーバーレイ */}
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 200,
+            background: 'rgba(0,0,0,0.25)',
+          }}
+        />
+      )}
+
+      {/* サイドバー本体 */}
+      <aside
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 250,
+          width: 208,
+          height: '100%',
+          background: '#ffffff',
+          borderRight: '1px solid #dde1e7',
+          display: 'flex',
+          flexDirection: 'column',
+          transform: open ? 'translateX(0)' : 'translateX(-208px)',
+          transition: 'transform 0.22s ease',
+          boxShadow: open ? '4px 0 16px rgba(0,0,0,0.10)' : 'none',
+        }}
+      >
+        <div style={{ padding: '56px 20px 16px', borderBottom: '1px solid #dde1e7' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#4a7fff', marginBottom: 2 }}>
+            ADMIN
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1d23' }}>工事部 工程表</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>{userName}</div>
+        </div>
+
+        <nav style={{ flex: 1, padding: '8px 12px' }}>
+          {links.map(link => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 12px',
+                borderRadius: 8,
+                fontSize: 14,
+                textDecoration: 'none',
+                background: pathname === link.href ? 'rgba(74,127,255,.12)' : 'transparent',
+                color: pathname === link.href ? '#4a7fff' : '#6b7280',
+                marginBottom: 2,
+              }}
+            >
+              <span>{link.icon}</span>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div style={{ padding: 12, borderTop: '1px solid #dde1e7' }}>
+          <button
+            onClick={handleLogout}
             style={{
-              background: pathname === link.href ? 'rgba(74,127,255,.12)' : 'transparent',
-              color: pathname === link.href ? '#4a7fff' : '#6b7280',
+              width: '100%',
+              padding: '8px 12px',
+              borderRadius: 8,
+              fontSize: 14,
+              textAlign: 'left',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#9ca3af',
             }}
           >
-            <span>{link.icon}</span>
-            {link.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="p-3 border-t" style={{ borderColor: '#dde1e7' }}>
-        <button
-          onClick={handleLogout}
-          className="w-full px-3 py-2 rounded-lg text-sm text-left transition-colors"
-          style={{ color: '#9ca3af' }}
-        >
-          ログアウト
-        </button>
-      </div>
-    </aside>
+            ログアウト
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }
