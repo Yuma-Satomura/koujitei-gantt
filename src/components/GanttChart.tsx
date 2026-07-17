@@ -390,7 +390,7 @@ export default function GanttChart({
                   {/* 担当列 */}
                   <td
                     style={{
-                      padding: '4px 5px',
+                      padding: '8px 5px',
                       background: '#ffffff',
                       color: '#1a1d23',
                       fontWeight: 700,
@@ -424,7 +424,7 @@ export default function GanttChart({
                   <td
                     onClick={() => setDetailRow(row)}
                     style={{
-                      padding: '4px 5px',
+                      padding: '8px 5px',
                       background: '#ffffff',
                       color: '#1a1d23',
                       borderRight: '1px solid #dde1e7',
@@ -441,7 +441,7 @@ export default function GanttChart({
                   {/* 出来高 */}
                   <td
                     style={{
-                      padding: '4px 2px',
+                      padding: '8px 2px',
                       background: '#ffffff',
                       color: '#1a1d23',
                       borderRight: '1px solid #dde1e7',
@@ -481,7 +481,7 @@ export default function GanttChart({
                   {/* 今月完了 */}
                   <td
                     style={{
-                      padding: '4px 2px',
+                      padding: '8px 2px',
                       background: '#ffffff',
                       borderRight: '1px solid #dde1e7',
                       textAlign: 'center',
@@ -723,7 +723,7 @@ function FixedCell({ children, style }: { children?: React.ReactNode; style?: Re
   return (
     <td
       style={{
-        padding: '4px 5px',
+        padding: '8px 5px',
         background: '#ffffff',
         color: '#1a1d23',
         borderRight: '1px solid #dde1e7',

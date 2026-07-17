@@ -16,7 +16,7 @@ interface Props {
 }
 
 const MONTHS = ['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月']
-const ROWS_PER_PAGE = 35
+const ROWS_PER_PAGE = 20
 
 function splitGroupsIntoPages(groups: GanttGroup[], rowsPerPage: number): GanttGroup[][] {
   const pages: GanttGroup[][] = []
