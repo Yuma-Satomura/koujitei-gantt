@@ -30,8 +30,8 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  // 未認証ユーザーをログインへ
-  if (!user && pathname !== '/login') {
+  // 未認証ユーザーをログインへ（/auth/* は招待コールバック用に除外）
+  if (!user && pathname !== '/login' && !pathname.startsWith('/auth/')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

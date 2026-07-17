@@ -64,7 +64,10 @@ export default function LoginPage() {
     const supabase = createClient()
     const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
     if (signUpError || !data.user) {
-      setError(signUpError?.message ?? 'アカウント作成に失敗しました')
+      const alreadyExists = /already registered|already been/i.test(signUpError?.message ?? '')
+      setError(alreadyExists
+        ? '招待メールが送信済みです。メール内のリンクからログインしてください。'
+        : (signUpError?.message ?? 'アカウント作成に失敗しました'))
       setLoading(false)
       return
     }

@@ -49,16 +49,16 @@ export default function UsersClient({ users, pendingUsers }: Props) {
     setLoading(true)
     setError(null)
 
-    const { error: dbErr } = await supabase.from('koujitei_pending_users').insert({
-      email: form.email,
-      name: form.name,
-      role: form.role,
-      color: form.color,
+    const res = await fetch('/api/admin/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
     })
+    const json = await res.json()
 
     setLoading(false)
-    if (dbErr) {
-      setError(dbErr.code === '23505' ? 'このメールアドレスはすでに登録されています' : dbErr.message)
+    if (!res.ok) {
+      setError(json.error ?? '招待に失敗しました')
       return
     }
     setShowAdd(false)
@@ -110,7 +110,7 @@ export default function UsersClient({ users, pendingUsers }: Props) {
           >
             <h3 className="text-sm font-bold mb-1" style={{ color: '#1a1d23' }}>ユーザーを招待</h3>
             <p className="text-xs mb-4" style={{ color: '#9ca3af' }}>
-              登録後、該当メールアドレスでログイン画面からパスワードを設定して初回ログインできます。
+              招待メールが自動送信されます。受け取ったメールのリンクからパスワードを設定して初回ログインできます。
             </p>
             {error && (
               <div className="rounded-lg px-4 py-3 text-sm mb-3" style={{ background: 'rgba(231,76,60,.12)', color: '#e74c3c', border: '1px solid rgba(231,76,60,.2)' }}>
@@ -196,7 +196,7 @@ export default function UsersClient({ users, pendingUsers }: Props) {
                 className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
                 style={{ background: '#4a7fff', color: '#fff' }}
               >
-                {loading ? '登録中...' : '招待リストに追加'}
+                {loading ? '送信中...' : '招待メールを送信'}
               </button>
             </div>
           </form>
