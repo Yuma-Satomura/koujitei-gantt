@@ -16,7 +16,7 @@ interface Props {
 }
 
 const MONTHS = ['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月']
-const ROWS_PER_PAGE = 20
+const ROWS_PER_PAGE = 35
 
 function splitGroupsIntoPages(groups: GanttGroup[], rowsPerPage: number): GanttGroup[][] {
   const pages: GanttGroup[][] = []
@@ -257,7 +257,7 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
           aria-hidden="true"
           style={{ position: 'fixed', left: '-9999px', top: 0, width: 1587, overflow: 'visible' }}
         >
-          <div ref={printPageRef}>
+          <div ref={printPageRef} style={{ minHeight: 1100 }}>
             <GanttChart
               groups={printJob.pages[printJob.currentPage]}
               fiscalYear={fiscalYear}

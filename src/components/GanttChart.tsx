@@ -324,7 +324,7 @@ export default function GanttChart({
                   top: 0,
                   zIndex: 20,
                   textAlign: 'left',
-                  minWidth: h === '件名' ? 88 : h === '担当' ? 36 : h === '納入先' ? 52 : h === '請負額(K)' ? 44 : h === '出来高' ? 34 : h === '今月完了' ? 34 : 30,
+                  minWidth: h === '件名' ? 140 : h === '納入先' ? 90 : h === '担当' ? 26 : h === '請負額(K)' ? 34 : h === '出来高' ? 30 : h === '今月完了' ? 20 : (h === '設計' || h === '営業' || h === '外注管理') ? 24 : 30,
                 }}
               >
                 {h}
@@ -416,7 +416,7 @@ export default function GanttChart({
                   <FixedCell>{row.project.eigyo}</FixedCell>
                   <FixedCell>{row.project.gaichuu}</FixedCell>
                   <FixedCell>{row.project.kouban}</FixedCell>
-                  <FixedCell style={{ maxWidth: 52, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <FixedCell style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {row.project.client_name}
                   </FixedCell>
 
@@ -428,7 +428,7 @@ export default function GanttChart({
                       background: '#ffffff',
                       color: '#1a1d23',
                       borderRight: '1px solid #dde1e7',
-                      maxWidth: 88,
+                      maxWidth: 140,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       cursor: 'pointer',
@@ -446,7 +446,7 @@ export default function GanttChart({
                       color: '#1a1d23',
                       borderRight: '1px solid #dde1e7',
                       textAlign: 'center',
-                      minWidth: 34,
+                      minWidth: 30,
                     }}
                     onClick={() => !isAdmin && setEditingProgress({ assignmentId: row.assignment.id, value: String(row.assignment.progress) })}
                   >
