@@ -43,8 +43,8 @@ export default function ProjectsClient({ projects, members, assignments, fiscalY
     <div className="flex flex-col h-full">
       {/* ツールバー */}
       <div
-        className="flex items-center gap-3 px-4 py-2.5 shrink-0"
-        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7' }}
+        className="flex items-center gap-3 py-2.5 shrink-0"
+        style={{ background: '#ffffff', borderBottom: '1px solid #dde1e7', paddingLeft: 56, paddingRight: 16 }}
       >
         <h2 className="text-sm font-bold" style={{ color: '#1a1d23' }}>案件管理</h2>
         <input
