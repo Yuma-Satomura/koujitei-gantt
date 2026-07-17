@@ -21,16 +21,13 @@ export default async function MemberGanttPage() {
       supabase.from('koujitei_periods').select('*'),
     ])
 
-  const groups: GanttGroup[] = (members ?? []).map(member => {
-    const memberAssignments = (assignments ?? []).filter(a => a.user_id === member.id)
-    const rows = memberAssignments.map(assignment => {
-      const project = (projects ?? []).find(p => p.id === assignment.project_id)
-      if (!project) return null
-      const memberPeriods = (periods ?? []).filter(p => p.assignment_id === assignment.id)
-      return { assignment, project, member, periods: memberPeriods }
-    }).filter(Boolean) as GanttGroup['rows']
-    return { member, rows }
-  }).filter(g => g.rows.length > 0)
+  const groups: GanttGroup[] = (assignments ?? []).flatMap(assignment => {
+    const project = (projects ?? []).find(p => p.id === assignment.project_id)
+    const member = (members ?? []).find(m => m.id === assignment.user_id)
+    if (!project || !member) return []
+    const assignmentPeriods = (periods ?? []).filter(p => p.assignment_id === assignment.id)
+    return [{ member, rows: [{ assignment, project, member, periods: assignmentPeriods }] }]
+  })
 
   return (
     <div className="flex flex-col h-full">

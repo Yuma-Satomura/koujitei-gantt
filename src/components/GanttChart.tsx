@@ -378,44 +378,38 @@ export default function GanttChart({
 
         {/* ボディ */}
         <tbody>
-          {localGroups.map((group, gi) => (
-            group.rows.map((row, ri) => {
-              const isFirstInGroup = ri === 0
-              const isLastInGroup = ri === group.rows.length - 1
-
+          {localGroups.map((group) => (
+            group.rows.map((row) => {
               return (
                 <tr
                   key={row.assignment.id}
                   style={{
-                    borderTop: isFirstInGroup ? '2px solid #dde1e7' : '1px solid #f8f9fa',
+                    borderTop: '1px solid #dde1e7',
                   }}
                 >
-                  {/* 担当列 (グループの最初の行のみ表示) */}
-                  {isFirstInGroup ? (
-                    <td
-                      rowSpan={group.rows.length}
+                  {/* 担当列 */}
+                  <td
+                    style={{
+                      padding: '4px 5px',
+                      background: '#ffffff',
+                      color: '#1a1d23',
+                      fontWeight: 700,
+                      borderRight: '1px solid #dde1e7',
+                      verticalAlign: 'middle',
+                    }}
+                  >
+                    <span
                       style={{
-                        padding: '4px 5px',
-                        background: '#ffffff',
-                        color: '#1a1d23',
-                        fontWeight: 700,
-                        borderRight: '1px solid #dde1e7',
-                        verticalAlign: 'middle',
+                        display: 'inline-block',
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: row.member.color,
+                        marginRight: 5,
                       }}
-                    >
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          background: group.member.color,
-                          marginRight: 5,
-                        }}
-                      />
-                      {group.member.name}
-                    </td>
-                  ) : null}
+                    />
+                    {row.member.name}
+                  </td>
 
                   {/* 固定列 */}
                   <FixedCell>{row.project.sekkei}</FixedCell>
