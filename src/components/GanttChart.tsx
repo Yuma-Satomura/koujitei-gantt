@@ -295,7 +295,7 @@ export default function GanttChart({
   }, [supabase, onDataChange])
 
   return (
-    <div ref={printRef} className="overflow-x-auto" style={{ background: '#f4f6f9' }}>
+    <div ref={printRef} style={{ background: '#f4f6f9' }}>
       <table
         style={{
           borderCollapse: 'collapse',
