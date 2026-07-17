@@ -43,6 +43,7 @@ export default function UsersClient({ users, pendingUsers }: Props) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
@@ -67,8 +68,14 @@ export default function UsersClient({ users, pendingUsers }: Props) {
   }
 
   async function handleDeletePending(id: string) {
-    const { error: delErr } = await supabase.from('koujitei_pending_users').delete().eq('id', id)
-    if (delErr) { setError(delErr.message); return }
+    const res = await fetch('/api/admin/delete-pending', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    const json = await res.json()
+    if (!res.ok) { setDeleteError(json.error ?? '削除に失敗しました'); return }
+    setDeleteError(null)
     refresh()
   }
 
@@ -208,6 +215,11 @@ export default function UsersClient({ users, pendingUsers }: Props) {
             <h3 className="text-xs font-bold mb-2 tracking-wider" style={{ color: '#9ca3af' }}>
               招待済み（初回ログイン待ち）
             </h3>
+            {deleteError && (
+              <div className="rounded-lg px-4 py-3 text-sm mb-2" style={{ background: 'rgba(231,76,60,.12)', color: '#e74c3c', border: '1px solid rgba(231,76,60,.2)' }}>
+                {deleteError}
+              </div>
+            )}
             <div className="space-y-2">
               {pendingUsers.map(pu => (
                 <div
