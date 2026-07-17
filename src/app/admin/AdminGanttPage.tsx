@@ -61,6 +61,7 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
     label: string
     pages: GanttGroup[][]
     currentPage: number
+    createdAt: string
   } | null>(null)
 
   const refresh = useCallback(() => router.refresh(), [router])
@@ -133,11 +134,14 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
     const label = from === to ? MONTHS[from] : `${MONTHS[from]}〜${MONTHS[to]}`
     const { default: jsPDF } = await import('jspdf')
     pdfRef.current = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' })
+    const now = new Date()
+    const createdAt = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
     setPrintJob({
       weekRange: { start: from * 4, end: to * 4 + 3 },
       label,
       pages,
       currentPage: 0,
+      createdAt,
     })
   }
 
@@ -257,7 +261,23 @@ export default function AdminGanttPage({ initialGroups, fiscalYear, members, pro
           aria-hidden="true"
           style={{ position: 'fixed', left: '-9999px', top: 0, width: 1587, overflow: 'visible' }}
         >
-          <div ref={printPageRef} style={{ minHeight: 1100 }}>
+          <div ref={printPageRef} style={{ minHeight: 1100, background: '#ffffff' }}>
+            {/* タイトル・ページ番号 */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '20px 28px 14px 28px',
+              borderBottom: '2px solid #1a1d23',
+            }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1d23', letterSpacing: 3 }}>
+                工程管理表
+              </div>
+              <div style={{ fontSize: 11, textAlign: 'right', color: '#1a1d23', lineHeight: 1.8 }}>
+                <div>{printJob.currentPage + 1} / {printJob.pages.length} ページ</div>
+                <div>作成日: {printJob.createdAt}</div>
+              </div>
+            </div>
             <GanttChart
               groups={printJob.pages[printJob.currentPage]}
               fiscalYear={fiscalYear}
